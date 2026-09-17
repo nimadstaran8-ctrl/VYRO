@@ -58,7 +58,7 @@ class LocalStorageAdapter implements StorageAdapter {
       this.cachedImages = images;
       setStorageData({ images, version: 1 });
       return { success: true };
-    } catch (e) {
+    } catch {
       return { success: false, error: 'Failed to save image.' };
     }
   }

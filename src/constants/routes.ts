@@ -22,6 +22,13 @@ export const ROUTES = {
   ADMIN_PRODUCT_NEW: '/admin/products/new',
   ADMIN_PRODUCT_EDIT: '/admin/products/:id/edit',
   ADMIN_MEDIA: '/admin/media',
+  ADMIN_CATEGORIES: '/admin/categories',
+  ADMIN_ORDERS: '/admin/orders',
+  ADMIN_ORDER_DETAIL: '/admin/orders/:id',
+  ADMIN_CUSTOMERS: '/admin/customers',
+  ADMIN_CUSTOMER_DETAIL: '/admin/customers/:id',
+  ADMIN_HOMEPAGE: '/admin/homepage',
+  ADMIN_SETTINGS: '/admin/settings',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

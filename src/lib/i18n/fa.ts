@@ -1,4 +1,14 @@
 export const fa = {
+  adminNav: {
+    dashboard: 'داشبورد',
+    products: 'محصولات',
+    categories: 'دسته‌بندی‌ها',
+    orders: 'سفارشات',
+    customers: 'مشتریان',
+    media: 'کتابخانه تصاویر',
+    homepage: 'صفحه اصلی',
+    settings: 'تنظیمات',
+  },
   common: {
     loading: 'در حال بارگذاری...',
     error: 'خطا',

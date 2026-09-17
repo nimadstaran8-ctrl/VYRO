@@ -1,4 +1,14 @@
 export const en = {
+  adminNav: {
+    dashboard: 'Dashboard',
+    products: 'Products',
+    categories: 'Categories',
+    orders: 'Orders',
+    customers: 'Customers',
+    media: 'Media Library',
+    homepage: 'Homepage',
+    settings: 'Settings',
+  },
   common: {
     loading: 'Loading...',
     error: 'Error',

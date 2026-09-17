@@ -20,13 +20,27 @@ const Privacy = lazy(() => import('../../pages/info/Privacy').then(m => ({ defau
 const Terms = lazy(() => import('../../pages/info/Terms').then(m => ({ default: m.Terms })));
 const NotFound = lazy(() => import('../../pages/system/NotFound').then(m => ({ default: m.NotFound })));
 
+const AdminLayout = lazy(() => import('../../components/layout/AdminLayout').then(m => ({ default: m.AdminLayout })));
 const AdminDashboard = lazy(() => import('../../pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AdminProducts = lazy(() => import('../../pages/admin/AdminProducts').then(m => ({ default: m.AdminProducts })));
 const AdminProductCreate = lazy(() => import('../../pages/admin/AdminProductCreate').then(m => ({ default: m.AdminProductCreate })));
 const AdminProductEdit = lazy(() => import('../../pages/admin/AdminProductEdit').then(m => ({ default: m.AdminProductEdit })));
 const AdminMediaLibrary = lazy(() => import('../../pages/admin/AdminMediaLibrary').then(m => ({ default: m.AdminMediaLibrary })));
+const AdminCategories = lazy(() => import('../../pages/admin/AdminCategories').then(m => ({ default: m.AdminCategories })));
+const AdminOrders = lazy(() => import('../../pages/admin/AdminOrders').then(m => ({ default: m.AdminOrders })));
+const AdminOrderDetail = lazy(() => import('../../pages/admin/AdminOrderDetail').then(m => ({ default: m.AdminOrderDetail })));
+const AdminCustomers = lazy(() => import('../../pages/admin/AdminCustomers').then(m => ({ default: m.AdminCustomers })));
+const AdminCustomerDetail = lazy(() => import('../../pages/admin/AdminCustomerDetail').then(m => ({ default: m.AdminCustomerDetail })));
+const AdminHomepage = lazy(() => import('../../pages/admin/AdminHomepage').then(m => ({ default: m.AdminHomepage })));
+const AdminSettings = lazy(() => import('../../pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
 
-export const routeConfig = [
+export interface RouteConfig {
+  path: string;
+  Element: React.ComponentType;
+  children?: RouteConfig[];
+}
+
+export const routeConfig: RouteConfig[] = [
   { path: ROUTES.HOME, Element: Home },
   { path: ROUTES.SHOP, Element: Shop },
   { path: ROUTES.HATS, Element: Hats },
@@ -44,10 +58,23 @@ export const routeConfig = [
   { path: ROUTES.RETURNS, Element: Returns },
   { path: ROUTES.PRIVACY, Element: Privacy },
   { path: ROUTES.TERMS, Element: Terms },
-  { path: ROUTES.ADMIN, Element: AdminDashboard },
-  { path: ROUTES.ADMIN_PRODUCTS, Element: AdminProducts },
-  { path: ROUTES.ADMIN_PRODUCT_NEW, Element: AdminProductCreate },
-  { path: ROUTES.ADMIN_PRODUCT_EDIT, Element: AdminProductEdit },
-  { path: ROUTES.ADMIN_MEDIA, Element: AdminMediaLibrary },
+  {
+    path: ROUTES.ADMIN,
+    Element: AdminLayout,
+    children: [
+      { path: '', Element: AdminDashboard },
+      { path: 'products', Element: AdminProducts },
+      { path: 'products/new', Element: AdminProductCreate },
+      { path: 'products/:id/edit', Element: AdminProductEdit },
+      { path: 'media', Element: AdminMediaLibrary },
+      { path: 'categories', Element: AdminCategories },
+      { path: 'orders', Element: AdminOrders },
+      { path: 'orders/:id', Element: AdminOrderDetail },
+      { path: 'customers', Element: AdminCustomers },
+      { path: 'customers/:id', Element: AdminCustomerDetail },
+      { path: 'homepage', Element: AdminHomepage },
+      { path: 'settings', Element: AdminSettings },
+    ],
+  },
   { path: ROUTES.NOT_FOUND, Element: NotFound },
 ];

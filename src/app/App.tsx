@@ -2,7 +2,7 @@ import { Suspense, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout, PageTransition } from './routes/routeConfig';
-import { routeConfig } from './routes/routes';
+import { routeConfig, type RouteConfig } from './routes/routes';
 import { useLanguageStore } from '../stores/languageStore';
 import { getDirection } from '../lib/i18n';
 
@@ -14,6 +14,40 @@ function PageLoader() {
   );
 }
 
+interface RouteWithChildren extends RouteConfig {
+  children?: RouteConfig[];
+}
+
+function renderRoutes(routes: RouteWithChildren[], parentPath = '') {
+  return routes.map(({ path, Element, children }) => {
+    const fullPath = parentPath ? `${parentPath}/${path}` : path;
+    
+    if (children) {
+      return (
+        <Route key={path} path={path} element={
+          <Suspense fallback={<PageLoader />}>
+            <Element />
+          </Suspense>
+        }>
+          {renderRoutes(children, fullPath)}
+        </Route>
+      );
+    }
+    
+    return (
+      <Route
+        key={path}
+        path={fullPath}
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <Element />
+          </Suspense>
+        }
+      />
+    );
+  });
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
 
@@ -22,17 +56,7 @@ function AnimatedRoutes() {
       <PageTransition key={location.pathname}>
         <Routes location={location}>
           <Route path="/" element={<Layout />}>
-            {routeConfig.map(({ path, Element }) => (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Element />
-                  </Suspense>
-                }
-              />
-            ))}
+            {renderRoutes(routeConfig as RouteWithChildren[])}
           </Route>
         </Routes>
       </PageTransition>
