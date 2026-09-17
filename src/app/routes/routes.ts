@@ -24,6 +24,7 @@ const AdminDashboard = lazy(() => import('../../pages/admin/AdminDashboard').the
 const AdminProducts = lazy(() => import('../../pages/admin/AdminProducts').then(m => ({ default: m.AdminProducts })));
 const AdminProductCreate = lazy(() => import('../../pages/admin/AdminProductCreate').then(m => ({ default: m.AdminProductCreate })));
 const AdminProductEdit = lazy(() => import('../../pages/admin/AdminProductEdit').then(m => ({ default: m.AdminProductEdit })));
+const AdminMediaLibrary = lazy(() => import('../../pages/admin/AdminMediaLibrary').then(m => ({ default: m.AdminMediaLibrary })));
 
 export const routeConfig = [
   { path: ROUTES.HOME, Element: Home },
@@ -47,5 +48,6 @@ export const routeConfig = [
   { path: ROUTES.ADMIN_PRODUCTS, Element: AdminProducts },
   { path: ROUTES.ADMIN_PRODUCT_NEW, Element: AdminProductCreate },
   { path: ROUTES.ADMIN_PRODUCT_EDIT, Element: AdminProductEdit },
+  { path: ROUTES.ADMIN_MEDIA, Element: AdminMediaLibrary },
   { path: ROUTES.NOT_FOUND, Element: NotFound },
 ];

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Plus, ArrowRight, DollarSign, Save } from 'lucide-react';
+import { Package, Plus, ArrowRight, DollarSign, Save, Image } from 'lucide-react';
 import { ROUTES } from '../../constants/routes';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
@@ -97,6 +97,22 @@ export function AdminDashboard() {
           <div className="flex-1">
             <h2 className="text-lg font-medium text-primary">{content.addProduct}</h2>
             <p className="text-sm text-text-secondary">{content.createNewProduct}</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-text-secondary group-hover:translate-x-1 transition-transform rtl:rotate-180" />
+        </Link>
+
+        <Link
+          to={ROUTES.ADMIN_MEDIA}
+          className="group flex items-center gap-4 rounded-2xl bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-100">
+            <Image className="h-7 w-7 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-medium text-primary">{t('media.title', language)}</h2>
+            <p className="text-sm text-text-secondary">
+              {language === 'fa' ? 'مدیریت تصاویر سایت' : 'Manage website images'}
+            </p>
           </div>
           <ArrowRight className="h-5 w-5 text-text-secondary group-hover:translate-x-1 transition-transform rtl:rotate-180" />
         </Link>
