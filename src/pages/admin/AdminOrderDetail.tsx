@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Package, MapPin, CreditCard, Mail, Phone } from 'lucide-react';
+import { ArrowRight, Package, MapPin, CreditCard, Mail, Phone, CheckCircle2, XCircle, ReceiptText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
 import type { Order, OrderStatus } from '../../types/order';
-import { getOrderById, updateOrderStatus } from '../../services/orders';
+import {
+  getOrderById,
+  updateOrderStatus,
+  confirmOrderPayment,
+  rejectOrderPayment,
+} from '../../services/orders';
 import { formatProductPrice } from '../../services/currency';
+import { imageStorage } from '../../features/admin/services/imageStorage';
 import { ORDER_STATUSES, getOrderStatusLabel, getOrderStatusColor } from '../../lib/orderStatus';
 
 export function AdminOrderDetail() {
@@ -17,6 +24,7 @@ export function AdminOrderDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [rejectConfirm, setRejectConfirm] = useState(false);
 
   useEffect(() => {
     const found = getOrderById(id || '');
@@ -29,12 +37,51 @@ export function AdminOrderDetail() {
 
     setIsUpdating(true);
     setUpdateError(null);
-    const result = updateOrderStatus(order.id, newStatus);
+    // Cancelling an order that awaits payment approval must return the
+    // reserved stock to the catalog — route through rejectOrderPayment.
+    const result =
+      order.status === 'awaiting-approval' && newStatus === 'cancelled'
+        ? rejectOrderPayment(order.id)
+        : updateOrderStatus(order.id, newStatus);
 
     if (result.success) {
       setOrder({ ...order, status: newStatus });
     } else {
       setUpdateError(result.error || (language === 'fa' ? 'خطا در به‌روزرسانی وضعیت' : 'Failed to update status'));
+    }
+
+    setIsUpdating(false);
+  };
+
+  const handleApprovePayment = () => {
+    if (!order || isUpdating) return;
+
+    setIsUpdating(true);
+    setUpdateError(null);
+    const result = confirmOrderPayment(order.id);
+
+    if (result.success) {
+      setOrder({ ...order, status: 'paid' });
+    } else {
+      setUpdateError(result.error || (language === 'fa' ? 'خطا در تأیید پرداخت' : 'Failed to confirm payment'));
+    }
+
+    setIsUpdating(false);
+  };
+
+  const handleRejectPayment = () => {
+    if (!order || isUpdating) return;
+
+    setIsUpdating(true);
+    setUpdateError(null);
+    const result = rejectOrderPayment(order.id);
+
+    if (result.success) {
+      setOrder({ ...order, status: 'cancelled' });
+      setRejectConfirm(false);
+    } else {
+      setUpdateError(result.error || (language === 'fa' ? 'خطا در رد پرداخت' : 'Failed to reject payment'));
+      setRejectConfirm(false);
     }
 
     setIsUpdating(false);
@@ -201,10 +248,81 @@ export function AdminOrderDetail() {
                 {language === 'fa' ? 'روش پرداخت' : 'Payment Method'}
               </h2>
             </div>
-            <p className="text-sm text-text-secondary">
-              {language === 'fa' ? 'پرداخت آنلاین (آزمایشی)' : 'Online Payment (demo)'}
-            </p>
+            {order.payment?.method === 'card-to-card' ? (
+              <div className="space-y-2 text-sm">
+                <p className="font-medium text-primary">
+                  {language === 'fa' ? 'کارت به کارت' : 'Card-to-Card'}
+                </p>
+                <p className="text-text-secondary">
+                  {language === 'fa'
+                    ? 'مشتری مبلغ سفارش را کارت به کارت کرده و تصویر فیش واریز را آپلود کرده است.'
+                    : 'The customer transferred the total via card-to-card and uploaded a receipt image.'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                {language === 'fa' ? 'پرداخت آنلاین (آزمایشی)' : 'Online Payment (demo)'}
+              </p>
+            )}
           </div>
+
+          {order.payment?.receiptId && (
+            <div className="rounded-2xl bg-surface p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <ReceiptText className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-primary">
+                  {language === 'fa' ? 'فیش واریز' : 'Payment Receipt'}
+                </h2>
+              </div>
+              {imageStorage.getUrl(order.payment.receiptId) ? (
+                <a href={imageStorage.getUrl(order.payment.receiptId)} target="_blank" rel="noreferrer">
+                  <img
+                    src={imageStorage.getUrl(order.payment.receiptId)}
+                    alt={language === 'fa' ? 'فیش واریز مشتری' : 'Customer payment receipt'}
+                    className="max-h-96 w-full rounded-xl object-contain"
+                  />
+                </a>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {language === 'fa'
+                    ? 'تصویر فیش در این مرورگر یافت نشد (احتمالاً در مرورگر دیگری آپلود شده).'
+                    : 'The receipt image is not available in this browser (it was likely uploaded elsewhere).'}
+                </p>
+              )}
+            </div>
+          )}
+
+          {order.status === 'awaiting-approval' && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-amber-800">
+                {language === 'fa' ? 'تأیید پرداخت کارت به کارت' : 'Confirm Card-to-Card Payment'}
+              </h2>
+              <p className="mt-2 text-sm text-amber-700">
+                {language === 'fa'
+                  ? 'فیش واریز را بررسی کنید. تأیید پرداخت، سفارش را «پرداخت شده» می‌کند و رد آن سفارش را لغو و موجودی محصولات را برمی‌گرداند.'
+                  : 'Review the receipt. Approving marks the order as paid; rejecting cancels the order and returns the reserved stock.'}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button
+                  onClick={handleApprovePayment}
+                  disabled={isUpdating}
+                  className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                >
+                  <CheckCircle2 className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                  {language === 'fa' ? 'تأیید پرداخت' : 'Approve Payment'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setRejectConfirm(true)}
+                  disabled={isUpdating}
+                  className="text-red-500 hover:bg-red-50"
+                >
+                  <XCircle className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                  {language === 'fa' ? 'رد پرداخت' : 'Reject Payment'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-primary">
@@ -232,6 +350,23 @@ export function AdminOrderDetail() {
           </div>
         </div>
       </div>
+
+      {rejectConfirm && (
+        <ConfirmDialog
+          isOpen={rejectConfirm}
+          onClose={() => setRejectConfirm(false)}
+          onConfirm={handleRejectPayment}
+          title={language === 'fa' ? 'رد پرداخت' : 'Reject Payment'}
+          message={
+            language === 'fa'
+              ? 'آیا مطمئن هستید؟ سفارش لغو می‌شود و موجودی محصولات رزروشده به فروشگاه برمی‌گردد.'
+              : 'Are you sure? The order is cancelled and the reserved stock is returned to the catalog.'
+          }
+          confirmText={language === 'fa' ? 'رد پرداخت' : 'Reject Payment'}
+          cancelText={t('common.cancel', language)}
+          variant="danger"
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import type { Order, OrderStatus, OrderCustomer, OrderItem } from '../../types/order';
+import type { Order, OrderStatus, OrderCustomer, OrderItem, OrderPayment } from '../../types/order';
 import { FREE_SHIPPING_THRESHOLD, DEFAULT_SHIPPING_COST } from '../../constants/product';
-import { getProductById, decrementStock } from '../catalog/productService';
+import { getProductById, decrementStock, restoreStock } from '../catalog/productService';
 import { logActivity } from '../logs/logService';
 
 const ORDERS_STORAGE_KEY = 'vyro_orders_repository';
@@ -25,6 +25,7 @@ function normalizeStatus(status: string): OrderStatus {
 
 const VALID_STATUSES: OrderStatus[] = [
   'pending',
+  'awaiting-approval',
   'paid',
   'processing',
   'shipped',
@@ -201,6 +202,12 @@ export interface CreateOrderItemData {
 export interface CreateOrderData {
   items: CreateOrderItemData[];
   customer: OrderCustomer;
+  /**
+   * Card-to-card payments carry the uploaded receipt image id; such orders
+   * start as 'awaiting-approval' instead of 'pending' until the shop owner
+   * confirms the transfer.
+   */
+  payment?: OrderPayment;
 }
 
 export function getOrders(): Order[] {
@@ -272,16 +279,20 @@ export function createOrder(data: CreateOrderData): { success: boolean; order?: 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : DEFAULT_SHIPPING_COST;
 
+  const isCardToCard = data.payment?.method === 'card-to-card';
   const order: Order = {
     id: generateOrderId(),
     date: new Date().toISOString().split('T')[0],
-    status: 'pending',
+    status: isCardToCard ? 'awaiting-approval' : 'pending',
     customer: { ...data.customer },
     items,
     subtotal,
     shipping,
     discount: 0,
     total: subtotal + shipping,
+    payment: isCardToCard
+      ? { method: 'card-to-card', receiptId: data.payment?.receiptId }
+      : undefined,
   };
 
   orders.unshift(order);
@@ -331,6 +342,48 @@ export function updateOrderStatus(
   return { success: true };
 }
 
+/**
+ * Confirms a card-to-card payment: 'awaiting-approval' → 'paid'. Only valid
+ * for orders that are actually awaiting approval. The status change is
+ * recorded in the activity log by `updateOrderStatus`.
+ */
+export function confirmOrderPayment(id: string): { success: boolean; error?: string } {
+  initializeOrders();
+
+  const order = orders.find((o) => o.id === id);
+  if (!order) {
+    return { success: false, error: 'Order not found.' };
+  }
+  if (order.status !== 'awaiting-approval') {
+    return { success: false, error: 'Order is not awaiting payment approval.' };
+  }
+
+  return updateOrderStatus(id, 'paid');
+}
+
+/**
+ * Rejects a card-to-card payment: 'awaiting-approval' → 'cancelled' and the
+ * reserved stock is put back on sale. The status change is recorded in the
+ * activity log by `updateOrderStatus`.
+ */
+export function rejectOrderPayment(id: string): { success: boolean; error?: string } {
+  initializeOrders();
+
+  const order = orders.find((o) => o.id === id);
+  if (!order) {
+    return { success: false, error: 'Order not found.' };
+  }
+  if (order.status !== 'awaiting-approval') {
+    return { success: false, error: 'Order is not awaiting payment approval.' };
+  }
+
+  const result = updateOrderStatus(id, 'cancelled');
+  if (result.success) {
+    restoreStock(order.items.map((item) => ({ productId: item.productId, quantity: item.quantity })));
+  }
+  return result;
+}
+
 export function deleteOrder(id: string): { success: boolean; error?: string } {
   initializeOrders();
 
@@ -360,6 +413,7 @@ const REVENUE_STATUSES: OrderStatus[] = ['paid', 'processing', 'shipped', 'compl
 export function getOrderStats(): {
   total: number;
   pending: number;
+  awaitingApproval: number;
   paid: number;
   processing: number;
   shipped: number;
@@ -374,6 +428,7 @@ export function getOrderStats(): {
   return {
     total: orders.length,
     pending: countBy('pending'),
+    awaitingApproval: countBy('awaiting-approval'),
     paid: countBy('paid'),
     processing: countBy('processing'),
     shipped: countBy('shipped'),

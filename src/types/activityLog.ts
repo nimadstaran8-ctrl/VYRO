@@ -21,7 +21,13 @@ export type ActivityLogType =
   | 'admin-login'
   | 'admin-logout';
 
-export type ActivityLogSettingsSection = 'store' | 'language' | 'currency' | 'homepage' | 'reset';
+export type ActivityLogSettingsSection =
+  | 'store'
+  | 'language'
+  | 'currency'
+  | 'homepage'
+  | 'payment'
+  | 'reset';
 
 export interface ActivityLogDetail {
   /** Display name of the affected record (product, customer, media name, ...). */

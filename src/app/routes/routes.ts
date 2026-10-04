@@ -11,6 +11,7 @@ const StyleFinder = lazy(() => import('../../pages/shop/StyleFinder').then(m => 
 const Wishlist = lazy(() => import('../../pages/shop/Wishlist').then(m => ({ default: m.Wishlist })));
 const Cart = lazy(() => import('../../pages/shop/Cart').then(m => ({ default: m.Cart })));
 const Checkout = lazy(() => import('../../pages/shop/Checkout').then(m => ({ default: m.Checkout })));
+const Invoice = lazy(() => import('../../pages/shop/Invoice').then(m => ({ default: m.Invoice })));
 const SearchResults = lazy(() => import('../../pages/shop/SearchResults').then(m => ({ default: m.SearchResults })));
 const About = lazy(() => import('../../pages/info/About').then(m => ({ default: m.About })));
 const Contact = lazy(() => import('../../pages/info/Contact').then(m => ({ default: m.Contact })));
@@ -64,6 +65,7 @@ export const routeConfig: RouteConfig[] = [
   { path: ROUTES.WISHLIST, Element: Wishlist },
   { path: ROUTES.CART, Element: Cart },
   { path: ROUTES.CHECKOUT, Element: Checkout },
+  { path: ROUTES.INVOICE, Element: Invoice },
   { path: ROUTES.SEARCH, Element: SearchResults },
   { path: ROUTES.ABOUT, Element: About },
   { path: ROUTES.CONTACT, Element: Contact },

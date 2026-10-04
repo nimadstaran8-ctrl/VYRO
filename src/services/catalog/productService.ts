@@ -167,6 +167,33 @@ export function decrementStock(items: Array<{ productId: string; quantity: numbe
   }
 }
 
+/**
+ * Returns stock for order items — the mirror of `decrementStock`. Used when a
+ * card-to-card order is rejected so the reserved units go back on sale.
+ * Silent for unknown product ids.
+ */
+export function restoreStock(items: Array<{ productId: string; quantity: number }>): void {
+  initializeProductData();
+
+  for (const { productId, quantity } of items) {
+    const product = productData.find((p) => p.id === productId);
+    if (!product || quantity <= 0) continue;
+
+    const updated: Product = {
+      ...product,
+      stock: product.stock + quantity,
+    };
+
+    const result = productRepository.update(updated);
+    if (result.success) {
+      const index = productData.findIndex((p) => p.id === productId);
+      if (index !== -1) {
+        productData[index] = updated;
+      }
+    }
+  }
+}
+
 export function adminSearchProducts(query: string): Product[] {
   initializeProductData();
   return productRepository.search(query);

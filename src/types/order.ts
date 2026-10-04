@@ -1,10 +1,24 @@
 export type OrderStatus =
   | 'pending'
+  | 'awaiting-approval'
   | 'paid'
   | 'processing'
   | 'shipped'
   | 'completed'
   | 'cancelled';
+
+/**
+ * How the customer paid (or intends to pay). Card-to-card orders carry a
+ * receipt image id (stored in IndexedDB) and start as 'awaiting-approval'
+ * until the shop owner confirms the transfer in the admin panel.
+ */
+export type PaymentMethod = 'card-to-card';
+
+export interface OrderPayment {
+  method: PaymentMethod;
+  /** Id of the uploaded receipt image in IndexedDB (`vyro_image_db`). */
+  receiptId?: string;
+}
 
 export interface OrderCustomer {
   firstName: string;
@@ -37,4 +51,5 @@ export interface Order {
   shipping: number;
   discount: number;
   total: number;
+  payment?: OrderPayment;
 }

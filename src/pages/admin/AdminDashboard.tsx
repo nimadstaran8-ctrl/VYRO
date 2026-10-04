@@ -29,7 +29,7 @@ export function AdminDashboard() {
 
   const [stats, setStats] = useState({
     products: { total: 0, lowStock: 0 },
-    orders: { total: 0, processing: 0, revenue: 0 },
+    orders: { total: 0, processing: 0, awaitingApproval: 0, revenue: 0 },
     customers: { total: 0, totalSpent: 0 },
   });
   const [recentOrders, setRecentOrders] = useState<ReturnType<typeof getRecentOrders>>([]);
@@ -61,6 +61,7 @@ export function AdminDashboard() {
         orders: {
           total: orderStats.total,
           processing: orderStats.processing + orderStats.paid + orderStats.pending,
+          awaitingApproval: orderStats.awaitingApproval,
           revenue: orderStats.revenue,
         },
         customers: { total: customerStats.total, totalSpent: customerStats.totalSpent },
@@ -118,7 +119,11 @@ export function AdminDashboard() {
           icon={<ShoppingCart className="h-5 w-5" />}
           label={language === 'fa' ? 'سفارشات' : 'Orders'}
           value={stats.orders.total.toString()}
-          subtext={`${stats.orders.processing} ${language === 'fa' ? 'در جریان' : 'in progress'}`}
+          subtext={
+            stats.orders.awaitingApproval > 0
+              ? `${stats.orders.awaitingApproval} ${language === 'fa' ? 'در انتظار تأیید پرداخت' : 'awaiting payment approval'}`
+              : `${stats.orders.processing} ${language === 'fa' ? 'در جریان' : 'in progress'}`
+          }
           iconBg="bg-blue-100"
           href={ROUTES.ADMIN_ORDERS}
         />

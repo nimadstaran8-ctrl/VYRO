@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Copy, Upload, Trash2, Clock, ImageUp } from 'lucide-react';
 import { SEO } from '../../components/ui/SEO';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -14,6 +14,8 @@ import {
   createCustomer,
   incrementCustomerOrderStats,
 } from '../../services/customers';
+import { getPaymentSettings } from '../../services/settings';
+import { imageStorage, generateImageId, validateImageFile } from '../../features/admin/services/imageStorage';
 import type { Order } from '../../types/order';
 
 interface FormData {
@@ -26,10 +28,6 @@ interface FormData {
   postalCode: string;
   country: string;
   state: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvc: string;
-  nameOnCard: string;
 }
 
 interface FormErrors {
@@ -41,10 +39,11 @@ interface FormErrors {
   city?: string;
   postalCode?: string;
   country?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvc?: string;
-  nameOnCard?: string;
+}
+
+interface UploadedReceipt {
+  id: string;
+  previewUrl: string;
 }
 
 function validateEmail(email: string): boolean {
@@ -52,28 +51,36 @@ function validateEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-function validateCardNumber(cardNumber: string): boolean {
-  const cleaned = cardNumber.replace(/\s/g, '');
-  return /^\d{13,19}$/.test(cleaned);
-}
-
-function validateExpiryDate(expiry: string): boolean {
-  const match = expiry.match(/^(\d{2})\s*\/\s*(\d{2})$/);
-  if (!match) return false;
-  const month = parseInt(match[1], 10);
-  const year = parseInt(match[2], 10) + 2000;
-  if (month < 1 || month > 12) return false;
-  const now = new Date();
-  const expDate = new Date(year, month - 1);
-  return expDate > now;
-}
-
-function validateCVC(cvc: string): boolean {
-  return /^\d{3,4}$/.test(cvc);
-}
-
 function validatePostalCode(postalCode: string): boolean {
   return postalCode.trim().length >= 3;
+}
+
+/** Groups a 16–19 digit card number into 4-digit blocks for readability. */
+function formatCardNumber(cardNumber: string): string {
+  const digits = cardNumber.replace(/\D/g, '');
+  return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for browsers without the async clipboard API.
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export function Checkout() {
@@ -95,15 +102,22 @@ export function Checkout() {
     postalCode: '',
     country: '',
     state: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvc: '',
-    nameOnCard: '',
   });
+
+  // Card-to-card payment: shop card details come from admin settings, the
+  // customer uploads a transfer receipt which is stored in IndexedDB.
+  const [paymentSettings] = useState(() => getPaymentSettings());
+  const [receipt, setReceipt] = useState<UploadedReceipt | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const subtotal = getSubtotal();
   const shipping = subtotal > 75 ? 0 : 6;
   const total = subtotal + shipping;
+
+  const cardConfigured = paymentSettings.cardNumber.replace(/\D/g, '').length >= 13;
 
   const validate = (data: FormData): FormErrors => {
     const errors: FormErrors = {};
@@ -140,28 +154,6 @@ export function Checkout() {
       errors.country = language === 'fa' ? 'لطفاً کشور خود را وارد کنید' : 'Country is required';
     }
 
-    if (!data.cardNumber.trim()) {
-      errors.cardNumber = language === 'fa' ? 'شماره کارت الزامی است' : 'Card number is required';
-    } else if (!validateCardNumber(data.cardNumber)) {
-      errors.cardNumber = language === 'fa' ? 'لطفاً شماره کارت معتبر وارد کنید' : 'Please enter a valid card number';
-    }
-
-    if (!data.expiryDate.trim()) {
-      errors.expiryDate = language === 'fa' ? 'تاریخ انقضا الزامی است' : 'Expiry date is required';
-    } else if (!validateExpiryDate(data.expiryDate)) {
-      errors.expiryDate = language === 'fa' ? 'تاریخ انقضای معتبر وارد کنید (MM/YY)' : 'Please enter a valid expiry date (MM/YY)';
-    }
-
-    if (!data.cvc.trim()) {
-      errors.cvc = language === 'fa' ? 'CVC الزامی است' : 'CVC is required';
-    } else if (!validateCVC(data.cvc)) {
-      errors.cvc = language === 'fa' ? 'CVC معتبر وارد کنید' : 'Please enter a valid CVC';
-    }
-
-    if (!data.nameOnCard.trim()) {
-      errors.nameOnCard = language === 'fa' ? 'نام روی کارت الزامی است' : 'Name on card is required';
-    }
-
     return errors;
   };
 
@@ -176,6 +168,117 @@ export function Checkout() {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
+  const content = {
+    title: language === 'fa' ? 'پرداخت' : 'Checkout',
+    customerInfo: language === 'fa' ? 'اطلاعات مشتری' : 'Customer Information',
+    shippingAddress: language === 'fa' ? 'آدرس ارسال' : 'Shipping Address',
+    payment: language === 'fa' ? 'پرداخت' : 'Payment',
+    orderSummary: language === 'fa' ? 'خلاصه سفارش' : 'Order Summary',
+    placeOrder: language === 'fa' ? 'ثبت سفارش' : 'Place Order',
+    firstName: language === 'fa' ? 'نام' : 'First Name',
+    lastName: language === 'fa' ? 'نام خانوادگی' : 'Last Name',
+    email: language === 'fa' ? 'ایمیل' : 'Email',
+    phone: language === 'fa' ? 'تلفن' : 'Phone',
+    address: language === 'fa' ? 'آدرس' : 'Address',
+    city: language === 'fa' ? 'شهر' : 'City',
+    postalCode: language === 'fa' ? 'کد پستی' : 'Postal Code',
+    country: language === 'fa' ? 'کشور' : 'Country',
+    state: language === 'fa' ? 'استان' : 'State / Province',
+    subtotal: language === 'fa' ? 'جمع کل' : 'Subtotal',
+    shipping: language === 'fa' ? 'هزینه ارسال' : 'Shipping',
+    total: language === 'fa' ? 'مبلغ قابل پرداخت' : 'Total',
+    free: language === 'fa' ? 'رایگان' : 'Free',
+    cartEmpty: language === 'fa' ? 'سبد خرید شما خالی است' : 'Your cart is empty',
+    addItemsBeforeCheckout: language === 'fa' ? 'قبل از پرداخت محصولاتی اضافه کنید.' : 'Add some items before checking out.',
+    shopNow: language === 'fa' ? 'خرید کنید' : 'Shop Now',
+    orderPlaced: language === 'fa' ? 'سفارش شما با موفقیت ثبت شد' : 'Your order has been placed',
+    orderNumber: language === 'fa' ? 'شماره سفارش' : 'Order Number',
+    awaitingApproval:
+      language === 'fa'
+        ? 'پرداخت کارت به کارت شما در انتظار تأیید فروشگاه است. به‌محض تأیید، سفارش شما پردازش می‌شود.'
+        : 'Your card-to-card payment is awaiting the shop owner\u2019s confirmation. Your order will be processed as soon as it is approved.',
+    orderPlacedDesc:
+      language === 'fa'
+        ? 'این سفارش در پنل مدیریت قابل مشاهده است. داده‌ها به صورت محلی در مرورگر ذخیره شده‌اند.'
+        : 'The order is now visible in the admin panel. Data is stored locally in your browser.',
+    orderFailed: language === 'fa' ? 'خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.' : 'Failed to place the order. Please try again.',
+    viewInvoice: language === 'fa' ? 'مشاهده فاکتور' : 'View Invoice',
+    cardToCard: language === 'fa' ? 'پرداخت کارت به کارت' : 'Card-to-Card Payment',
+    cardToCardDesc:
+      language === 'fa'
+        ? 'مبلغ سفارش را به شماره کارت زیر واریز کنید، سپس تصویر فیش واریز را آپلود کنید. سفارش شما پس از تأیید فروشگاه پردازش می‌شود.'
+        : 'Transfer the order total to the card number below, then upload a photo of your receipt. Your order is processed once the shop confirms the payment.',
+    ourCardNumber: language === 'fa' ? 'شماره کارت فروشگاه' : 'Shop Card Number',
+    cardHolder: language === 'fa' ? 'به نام' : 'Card Holder',
+    copy: language === 'fa' ? 'کپی' : 'Copy',
+    copied: language === 'fa' ? 'کپی شد!' : 'Copied!',
+    amountToTransfer: language === 'fa' ? 'مبلغ قابل واریز' : 'Amount to transfer',
+    uploadReceipt: language === 'fa' ? 'آپلود تصویر فیش واریز' : 'Upload Payment Receipt',
+    changeReceipt: language === 'fa' ? 'تغییر تصویر فیش' : 'Change Receipt',
+    receiptUploaded: language === 'fa' ? 'فیش واریز آپلود شد' : 'Receipt uploaded',
+    removeReceipt: language === 'fa' ? 'حذف فیش' : 'Remove Receipt',
+    receiptRequired:
+      language === 'fa'
+        ? 'برای ثبت سفارش، آپلود تصویر فیش واریز الزامی است'
+        : 'A payment receipt image is required to place the order',
+    receiptInvalid:
+      language === 'fa'
+        ? 'فایل باید تصویری با فرمت JPG، PNG یا WEBP و حداکثر ۵ مگابایت باشد'
+        : 'The file must be a JPG, PNG or WEBP image of at most 5MB',
+    receiptUploadFailed:
+      language === 'fa' ? 'خطا در آپلود فیش. لطفاً دوباره تلاش کنید.' : 'Failed to upload the receipt. Please try again.',
+    noCardConfigured:
+      language === 'fa'
+        ? 'شماره کارت فروشگاه هنوز تنظیم نشده است. لطفاً با فروشگاه تماس بگیرید.'
+        : 'The shop card number is not configured yet. Please contact the store.',
+  };
+
+  const handleReceiptChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setReceiptError(content.receiptInvalid);
+      return;
+    }
+
+    setIsUploading(true);
+    setReceiptError(null);
+
+    const id = generateImageId();
+    const result = await imageStorage.add(id, file);
+
+    if (!result.success || !result.dataUrl) {
+      setReceiptError(result.error || content.receiptUploadFailed);
+      setIsUploading(false);
+      return;
+    }
+
+    // Drop the previous receipt so abandoned uploads don't fill the budget.
+    if (receipt) {
+      await imageStorage.delete(receipt.id);
+    }
+
+    setReceipt({ id, previewUrl: result.dataUrl });
+    setIsUploading(false);
+  };
+
+  const handleRemoveReceipt = async () => {
+    if (!receipt) return;
+    await imageStorage.delete(receipt.id);
+    setReceipt(null);
+  };
+
+  const handleCopyCard = async () => {
+    const ok = await copyText(paymentSettings.cardNumber.replace(/\D/g, ''));
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -186,6 +289,11 @@ export function Checkout() {
     setTouched(allTouched);
 
     if (hasErrors) {
+      return;
+    }
+
+    if (!receipt) {
+      setReceiptError(content.receiptRequired);
       return;
     }
 
@@ -209,9 +317,12 @@ export function Checkout() {
         postalCode: formData.postalCode.trim() || undefined,
         country: formData.country.trim() || undefined,
       },
+      payment: {
+        method: 'card-to-card',
+        receiptId: receipt.id,
+      },
     };
 
-    // Simulated payment processing delay, then persist the order locally.
     setTimeout(() => {
       const result = createOrder(orderData);
 
@@ -253,43 +364,6 @@ export function Checkout() {
     return undefined;
   };
 
-  const content = {
-    title: language === 'fa' ? 'پرداخت' : 'Checkout',
-    customerInfo: language === 'fa' ? 'اطلاعات مشتری' : 'Customer Information',
-    shippingAddress: language === 'fa' ? 'آدرس ارسال' : 'Shipping Address',
-    payment: language === 'fa' ? 'پرداخت' : 'Payment',
-    orderSummary: language === 'fa' ? 'خلاصه سفارش' : 'Order Summary',
-    demoNotice: language === 'fa' ? 'این یک صفحه آزمایشی است. اطلاعات واقعی وارد نکنید.' : 'This is a demo checkout. Do not enter real card information.',
-    placeOrder: language === 'fa' ? 'ثبت سفارش' : 'Place Order',
-    firstName: language === 'fa' ? 'نام' : 'First Name',
-    lastName: language === 'fa' ? 'نام خانوادگی' : 'Last Name',
-    email: language === 'fa' ? 'ایمیل' : 'Email',
-    phone: language === 'fa' ? 'تلفن' : 'Phone',
-    address: language === 'fa' ? 'آدرس' : 'Address',
-    city: language === 'fa' ? 'شهر' : 'City',
-    postalCode: language === 'fa' ? 'کد پستی' : 'Postal Code',
-    country: language === 'fa' ? 'کشور' : 'Country',
-    state: language === 'fa' ? 'استان' : 'State / Province',
-    cardNumber: language === 'fa' ? 'شماره کارت' : 'Card Number',
-    expiryDate: language === 'fa' ? 'تاریخ انقضا' : 'Expiry Date',
-    cvc: language === 'fa' ? 'CVC' : 'CVC',
-    nameOnCard: language === 'fa' ? 'نام روی کارت' : 'Name on Card',
-    subtotal: language === 'fa' ? 'جمع کل' : 'Subtotal',
-    shipping: language === 'fa' ? 'هزینه ارسال' : 'Shipping',
-    total: language === 'fa' ? 'مبلغ قابل پرداخت' : 'Total',
-    free: language === 'fa' ? 'رایگان' : 'Free',
-    cartEmpty: language === 'fa' ? 'سبد خرید شما خالی است' : 'Your cart is empty',
-    addItemsBeforeCheckout: language === 'fa' ? 'قبل از پرداخت محصولاتی اضافه کنید.' : 'Add some items before checking out.',
-    shopNow: language === 'fa' ? 'خرید کنید' : 'Shop Now',
-    orderPlaced: language === 'fa' ? 'سفارش شما با موفقیت ثبت شد' : 'Your order has been placed',
-    orderNumber: language === 'fa' ? 'شماره سفارش' : 'Order Number',
-    orderPlacedDesc:
-      language === 'fa'
-        ? 'این سفارش در پنل مدیریت قابل مشاهده است. داده‌ها به صورت محلی در مرورگر ذخیره شده‌اند.'
-        : 'The order is now visible in the admin panel. Data is stored locally in your browser.',
-    orderFailed: language === 'fa' ? 'خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.' : 'Failed to place the order. Please try again.',
-  };
-
   if (placedOrder) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
@@ -302,8 +376,15 @@ export function Checkout() {
         <p className="mt-2 text-sm text-text-secondary">
           {content.total}: {formatPrice(placedOrder.total, currency)}
         </p>
-        <p className="mt-4 text-xs text-text-secondary">{content.orderPlacedDesc}</p>
+        <p className="mx-auto mt-4 flex max-w-md items-start justify-center gap-2 text-sm text-amber-700">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{content.awaitingApproval}</span>
+        </p>
+        <p className="mt-2 text-xs text-text-secondary">{content.orderPlacedDesc}</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button onClick={() => navigate(`/invoice/${placedOrder.id}`)}>
+            {content.viewInvoice}
+          </Button>
           <Button variant="outline" onClick={() => navigate('/')}>
             {language === 'fa' ? 'بازگشت به فروشگاه' : 'Back to Store'}
           </Button>
@@ -328,7 +409,7 @@ export function Checkout() {
     <>
       <SEO
         title={content.title}
-        description={language === 'fa' ? 'تکمیل خرید وایرو به صورت امن و سریع.' : 'Complete your VYRO purchase securely and quickly.'}
+        description={language === 'fa' ? 'تکمیل خرید وایرو با پرداخت کارت به کارت.' : 'Complete your VYRO purchase with card-to-card payment.'}
       />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-semibold uppercase tracking-wider text-primary md:text-4xl">{content.title}</h1>
@@ -434,55 +515,108 @@ export function Checkout() {
             </section>
 
             <section className="rounded-2xl bg-white p-6">
-              <h2 className="text-lg font-semibold text-primary">{content.payment}</h2>
-              <div className="mt-4 space-y-4">
-                <Input
-                  label={content.cardNumber}
-                  placeholder="0000 0000 0000 0000"
-                  required
-                  value={formData.cardNumber}
-                  onChange={handleChange('cardNumber')}
-                  onBlur={handleBlur('cardNumber')}
-                  error={getFieldError('cardNumber')}
-                  autoComplete="cc-number"
-                  inputMode="numeric"
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    label={content.expiryDate}
-                    placeholder="MM / YY"
-                    required
-                    value={formData.expiryDate}
-                    onChange={handleChange('expiryDate')}
-                    onBlur={handleBlur('expiryDate')}
-                    error={getFieldError('expiryDate')}
-                    autoComplete="cc-exp"
-                  />
-                  <Input
-                    label={content.cvc}
-                    placeholder="123"
-                    required
-                    value={formData.cvc}
-                    onChange={handleChange('cvc')}
-                    onBlur={handleBlur('cvc')}
-                    error={getFieldError('cvc')}
-                    autoComplete="cc-csc"
-                    inputMode="numeric"
-                  />
+              <h2 className="text-lg font-semibold text-primary">{content.cardToCard}</h2>
+              <p className="mt-2 text-sm text-text-secondary">{content.cardToCardDesc}</p>
+
+              {!cardConfigured ? (
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700" role="alert">
+                  {content.noCardConfigured}
+                </p>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+                      {content.ourCardNumber}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="font-mono text-lg font-semibold tracking-wider text-primary" dir="ltr">
+                        {formatCardNumber(paymentSettings.cardNumber)}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyCard}
+                        className="shrink-0"
+                      >
+                        <Copy className="h-4 w-4 ltr:mr-1.5 rtl:ml-1.5" />
+                        {copied ? content.copied : content.copy}
+                      </Button>
+                    </div>
+                    {paymentSettings.cardHolder && (
+                      <p className="mt-2 text-sm text-text-secondary">
+                        {content.cardHolder}: <span className="font-medium text-primary">{paymentSettings.cardHolder}</span>
+                      </p>
+                    )}
+                    <p className="mt-3 border-t border-border pt-3 text-sm">
+                      <span className="text-text-secondary">{content.amountToTransfer}:{' '}
+                        <span className="font-semibold text-primary">{formatPrice(total, currency)}</span>
+                      </span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleReceiptChange}
+                      aria-label={content.uploadReceipt}
+                    />
+                    {receipt ? (
+                      <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                        <img
+                          src={receipt.previewUrl}
+                          alt={content.receiptUploaded}
+                          className="h-16 w-16 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="flex items-center gap-1.5 text-sm font-medium text-green-700">
+                            <ImageUp className="h-4 w-4" />
+                            {content.receiptUploaded}
+                          </p>
+                          <div className="mt-2 flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="text-xs text-primary underline-offset-2 hover:underline"
+                            >
+                              {content.changeReceipt}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRemoveReceipt}
+                              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {content.removeReceipt}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-background px-4 py-8 text-text-secondary transition-colors hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                      >
+                        <Upload className="h-6 w-6" />
+                        <span className="text-sm font-medium">
+                          {isUploading ? (language === 'fa' ? 'در حال آپلود...' : 'Uploading...') : content.uploadReceipt}
+                        </span>
+                        <span className="text-xs">JPG، PNG، WEBP — ۵ مگابایت</span>
+                      </button>
+                    )}
+                    {receiptError && (
+                      <p className="mt-2 text-sm text-red-600" role="alert">
+                        {receiptError}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <Input
-                  label={content.nameOnCard}
-                  required
-                  value={formData.nameOnCard}
-                  onChange={handleChange('nameOnCard')}
-                  onBlur={handleBlur('nameOnCard')}
-                  error={getFieldError('nameOnCard')}
-                  autoComplete="cc-name"
-                />
-              </div>
-              <p className="mt-4 text-xs text-text-secondary">
-                {content.demoNotice}
-              </p>
+              )}
             </section>
           </div>
 
@@ -523,7 +657,7 @@ export function Checkout() {
                 variant="accent"
                 className="mt-6 w-full"
                 isLoading={isPlacing}
-                disabled={hasErrors && Object.keys(touched).length > 0}
+                disabled={!cardConfigured}
               >
                 {content.placeOrder}
               </Button>

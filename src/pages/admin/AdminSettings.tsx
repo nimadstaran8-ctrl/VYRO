@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Globe, Bell, Shield, Palette } from 'lucide-react';
+import { Save, Globe, Bell, Shield, Palette, CreditCard } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useLanguageStore } from '../../stores/languageStore';
@@ -9,6 +9,7 @@ import {
   updateStoreSettings,
   updateLanguageSettings,
   updateCurrencySettings,
+  updatePaymentSettings,
   type Settings,
 } from '../../services/settings';
 import { setUsdToTomanRate } from '../../services/currency';
@@ -23,19 +24,20 @@ export function AdminSettings() {
 
   const handleSave = () => {
     setIsSaving(true);
-    
+
     updateStoreSettings(settings.store);
     updateLanguageSettings(settings.language);
-    
+    updatePaymentSettings(settings.payment);
+
     const currencyResult = updateCurrencySettings(settings.currency);
     if (currencyResult.success && settings.currency.exchangeRate) {
       setUsdToTomanRate(settings.currency.exchangeRate);
     }
-    
+
     if (settings.language.defaultLanguage !== lang) {
       setLanguage(settings.language.defaultLanguage);
     }
-    
+
     setIsSaving(false);
     setSaveMessage(language === 'fa' ? 'تنظیمات با موفقیت ذخیره شد' : 'Settings saved successfully');
     setTimeout(() => setSaveMessage(null), 3000);
@@ -45,6 +47,13 @@ export function AdminSettings() {
     setSettings(prev => ({
       ...prev,
       store: { ...prev.store, [field]: value }
+    }));
+  };
+
+  const updatePayment = (field: 'cardNumber' | 'cardHolder', value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      payment: { ...prev.payment, [field]: value }
     }));
   };
 
@@ -192,6 +201,45 @@ export function AdminSettings() {
               {language === 'fa' ? 'آخرین به‌روزرسانی:' : 'Last updated:'} {settings.currency.exchangeRateLastUpdated}
             </p>
           )}
+        </div>
+
+        <div className="bg-surface rounded-2xl p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-primary">
+              {language === 'fa' ? 'پرداخت کارت به کارت' : 'Card-to-Card Payment'}
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-text-secondary">
+            {language === 'fa'
+              ? 'این شماره کارت در صفحه پرداخت به مشتری نمایش داده می‌شود و مشتری فیش واریز را آپلود می‌کند. برای تغییر فروشگاه، کافی است شماره کارت جدید را ذخیره کنید.'
+              : 'This card number is shown to customers at checkout, who upload a transfer receipt. To hand the shop over, simply save the new card number.'}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label={language === 'fa' ? 'شماره کارت' : 'Card Number'}
+              placeholder="0000 0000 0000 0000"
+              value={settings.payment.cardNumber}
+              onChange={(e) => updatePayment('cardNumber', e.target.value)}
+              inputMode="numeric"
+              className="sm:col-span-2"
+            />
+            <Input
+              label={language === 'fa' ? 'نام صاحب کارت' : 'Card Holder Name'}
+              value={settings.payment.cardHolder}
+              onChange={(e) => updatePayment('cardHolder', e.target.value)}
+              className="sm:col-span-2"
+            />
+          </div>
+          <p className="mt-3 text-xs text-text-secondary">
+            {settings.payment.cardNumber.replace(/\D/g, '').length >= 13
+              ? (language === 'fa'
+                ? 'شماره کارت تنظیم شده و در صفحه پرداخت نمایش داده می‌شود.'
+                : 'Card number is set and will be shown at checkout.')
+              : (language === 'fa'
+                ? 'تا زمانی که شماره کارت ذخیره نشود، پرداخت کارت به کارت در صفحه پرداخت غیرفعال است.'
+                : 'Card-to-card payment stays disabled at checkout until a card number is saved.')}
+          </p>
         </div>
 
         <div className="bg-surface rounded-2xl p-6 shadow-sm">

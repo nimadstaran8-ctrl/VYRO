@@ -7,6 +7,8 @@ a prototype. Read it before deploying anything to production.
 
 | Route | Page |
 | --- | --- |
+| `/checkout` | Storefront checkout (card-to-card payment + receipt upload) |
+| `/invoice/:id` | Storefront virtual invoice for an order (printable) |
 | `/admin/login` | Admin login (standalone, outside the admin layout) |
 | `/admin` | Dashboard (stats, low stock, recent orders/products, currency rate) |
 | `/admin/products` | Product list (search, status/category filters, preview, delete) |
@@ -107,6 +109,41 @@ Single source of truth: `src/services/currency/currencyService.ts` +
 functions (`getProducts`, `getProductBySlug`, search, featured/trending,
 category listings). `getProductById` and `getAllProducts` remain unfiltered for
 admin use (cart/wishlist item resolution, edit pages).
+
+## Card-to-card payment flow (frontend-only)
+
+The shop accepts manual **card-to-card** transfers instead of a payment
+gateway. The flow spans settings, checkout and the order detail page:
+
+1. **Shop card number** — `Settings.payment` (`cardNumber`, `cardHolder`)
+   in `vyro_settings`, edited in the admin "پرداخت کارت به کارت" section
+   (`AdminSettings.tsx`). A new shop owner just saves their own card. While
+   the card number is empty, card-to-card checkout is disabled with a notice.
+2. **Checkout** (`Checkout.tsx`) — the customer sees the shop card number
+   (copy button), the amount to transfer, and must **upload a receipt image**
+   (JPG/PNG/WEBP, ≤5 MB) before the order can be placed. The receipt is
+   stored in IndexedDB (`vyro_image_db`, shared with product images and the
+   200 MB budget) and its id is saved on the order as
+   `order.payment.receiptId`.
+3. **Order status** — card-to-card orders are created as
+   `awaiting-approval` (a seventh `OrderStatus`), not `pending`. The owner
+   reviews the receipt in `AdminOrderDetail.tsx` and either **approves**
+   (`confirmOrderPayment` → `paid`) or **rejects** (`rejectOrderPayment` →
+   `cancelled`, which also returns the reserved stock via
+   `productService.restoreStock`). Stock is still decremented at order
+   creation, so rejected orders don't lose units. The dashboard orders card
+   highlights the number of orders awaiting approval.
+4. **Virtual invoice** — `/invoice/:id` (`Invoice.tsx`) renders a printable
+   invoice (shop header, customer, items, totals, card-to-card details,
+   localized `fa-IR` date) with a print button that hides the site chrome
+   via print CSS. It is reachable from the checkout success screen.
+
+All transitions are recorded in the activity log like any other status
+change. Limitations: everything above is per-browser (the customer and the
+owner must use the same browser for the receipt to be visible), "approval"
+is a manual click by the owner who eyeballs the receipt image (no bank
+verification whatsoever), and there is no customer account/login — the
+invoice is only reachable by its direct URL in the same browser.
 
 ## Activity log (frontend-only)
 

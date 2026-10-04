@@ -37,11 +37,24 @@ export interface HomepageSettings {
   featuredCategoryIds: string[];
 }
 
+/**
+ * Card-to-card payment details shown to customers at checkout. Kept in
+ * settings (not hardcoded) so a new shop owner can replace the card with
+ * their own without touching the code.
+ */
+export interface PaymentSettings {
+  /** 13–19 digit bank card number, shown to customers for the transfer. */
+  cardNumber: string;
+  /** Card holder name, shown next to the number. */
+  cardHolder: string;
+}
+
 export interface Settings {
   store: StoreSettings;
   language: LanguageSettings;
   currency: CurrencySettings;
   homepage: HomepageSettings;
+  payment: PaymentSettings;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -74,6 +87,10 @@ const DEFAULT_SETTINGS: Settings = {
     featuredProductIds: [],
     featuredCategoryIds: [],
   },
+  payment: {
+    cardNumber: '',
+    cardHolder: '',
+  },
 };
 
 function getSettingsData(): Settings {
@@ -86,6 +103,7 @@ function getSettingsData(): Settings {
         language: { ...DEFAULT_SETTINGS.language, ...parsed.language },
         currency: { ...DEFAULT_SETTINGS.currency, ...parsed.currency },
         homepage: { ...DEFAULT_SETTINGS.homepage, ...parsed.homepage },
+        payment: { ...DEFAULT_SETTINGS.payment, ...parsed.payment },
       };
     }
   } catch {
@@ -169,6 +187,22 @@ export function updateHomepageSettings(updates: Partial<HomepageSettings>): { su
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save homepage settings' };
+  }
+}
+
+export function getPaymentSettings(): PaymentSettings {
+  return getSettingsData().payment;
+}
+
+export function updatePaymentSettings(updates: Partial<PaymentSettings>): { success: boolean; error?: string } {
+  try {
+    const settings = getSettingsData();
+    settings.payment = { ...settings.payment, ...updates };
+    setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'payment' } });
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to save payment settings' };
   }
 }
 
