@@ -1,9 +1,11 @@
-import type { Product, Category, Filters, SortOption } from '../../types';
+import type { Product, Category, Filters, SortOption, ProductStatus } from '../../types';
 import { products as mockProducts } from '../../data/mock/products';
 import { productRepository } from '../../features/admin/services/productRepository';
 import { imageStorage } from '../../features/admin/services/imageStorage';
+import { logActivity } from '../logs/logService';
 
 const FALLBACK_IMAGE = '/images/site/fallback.svg';
+const DEFAULT_PRODUCT_STATUS: ProductStatus = 'active';
 
 let productData: Product[] = [];
 let initialized = false;
@@ -14,10 +16,10 @@ function isExternalUrl(url: string): boolean {
 
 function resolveImageId(imgId: string): string {
   if (!imgId) return FALLBACK_IMAGE;
-  
-  const stored = imageStorage.get(imgId);
-  if (stored) {
-    return stored.dataUrl;
+
+  const storedUrl = imageStorage.getUrl(imgId);
+  if (storedUrl) {
+    return storedUrl;
   }
   if (isExternalUrl(imgId)) {
     return FALLBACK_IMAGE;
@@ -36,9 +38,14 @@ function resolveProductImages(product: Product): Product {
 
   return {
     ...product,
+    status: product.status ?? DEFAULT_PRODUCT_STATUS,
     images: resolvedImages.length > 0 ? resolvedImages : [FALLBACK_IMAGE],
     primaryImage: resolvedPrimaryImage || FALLBACK_IMAGE,
   };
+}
+
+function isStorefrontVisible(product: Product): boolean {
+  return (product.status ?? DEFAULT_PRODUCT_STATUS) !== 'draft';
 }
 
 function initializeProductData(): void {
@@ -79,9 +86,16 @@ export function initializeProducts(products: Product[]) {
   initialized = true;
 }
 
-export function getProducts(): Product[] {
+/** All products including drafts — admin-facing. */
+export function getAllProducts(): Product[] {
   initializeProductData();
   return productData.map(resolveProductImages);
+}
+
+/** Storefront-visible products (drafts are hidden). */
+export function getProducts(): Product[] {
+  initializeProductData();
+  return productData.filter(isStorefrontVisible).map(resolveProductImages);
 }
 
 export function getProductById(id: string): Product | undefined {
@@ -92,7 +106,7 @@ export function getProductById(id: string): Product | undefined {
 
 export function getProductBySlug(slug: string): Product | undefined {
   initializeProductData();
-  const product = productData.find((p) => p.slug === slug);
+  const product = productData.find((p) => p.slug === slug && isStorefrontVisible(p));
   return product ? resolveProductImages(product) : undefined;
 }
 
@@ -101,6 +115,7 @@ export function createProduct(product: Product): { success: boolean; error?: str
   const result = productRepository.add(product);
   if (result.success) {
     productData = productRepository.getAll();
+    logActivity({ type: 'product-created', entityId: product.id, detail: { name: product.name } });
   }
   return result;
 }
@@ -110,17 +125,46 @@ export function updateProduct(product: Product): { success: boolean; error?: str
   const result = productRepository.update(product);
   if (result.success) {
     productData = productRepository.getAll();
+    logActivity({ type: 'product-updated', entityId: product.id, detail: { name: product.name } });
   }
   return result;
 }
 
 export function deleteProduct(id: string): { success: boolean; error?: string } {
   initializeProductData();
+  const name = productData.find((p) => p.id === id)?.name;
   const result = productRepository.delete(id);
   if (result.success) {
     productData = productRepository.getAll();
+    logActivity({ type: 'product-deleted', entityId: id, detail: { name } });
   }
   return result;
+}
+
+/**
+ * Reduces stock for ordered items and persists the change. Called when a
+ * real order is placed from checkout. Silent for unknown product ids.
+ */
+export function decrementStock(items: Array<{ productId: string; quantity: number }>): void {
+  initializeProductData();
+
+  for (const { productId, quantity } of items) {
+    const product = productData.find((p) => p.id === productId);
+    if (!product || quantity <= 0) continue;
+
+    const updated: Product = {
+      ...product,
+      stock: Math.max(0, product.stock - quantity),
+    };
+
+    const result = productRepository.update(updated);
+    if (result.success) {
+      const index = productData.findIndex((p) => p.id === productId);
+      if (index !== -1) {
+        productData[index] = updated;
+      }
+    }
+  }
 }
 
 export function adminSearchProducts(query: string): Product[] {
@@ -131,7 +175,7 @@ export function adminSearchProducts(query: string): Product[] {
 export function getFeaturedProducts(limit = 8): Product[] {
   initializeProductData();
   return productData
-    .filter((p) => p.featured)
+    .filter((p) => p.featured && isStorefrontVisible(p))
     .slice(0, limit)
     .map(resolveProductImages);
 }
@@ -139,7 +183,7 @@ export function getFeaturedProducts(limit = 8): Product[] {
 export function getTrendingProducts(limit = 6): Product[] {
   initializeProductData();
   return productData
-    .filter((p) => p.isBestSeller || p.rating >= 4.8)
+    .filter((p) => isStorefrontVisible(p) && (p.isBestSeller || p.rating >= 4.8))
     .sort((a, b) => b.reviewCount - a.reviewCount)
     .slice(0, limit)
     .map(resolveProductImages);
@@ -148,20 +192,24 @@ export function getTrendingProducts(limit = 6): Product[] {
 export function getRelatedProducts(product: Product, limit = 4): Product[] {
   initializeProductData();
   return productData
-    .filter((p) => p.id !== product.id && (p.category === product.category || p.style === product.style))
+    .filter((p) => p.id !== product.id && isStorefrontVisible(p) && (p.category === product.category || p.style === product.style))
     .slice(0, limit)
     .map(resolveProductImages);
 }
 
 export function getProductsByCategory(category: Category): Product[] {
   initializeProductData();
-  return productData.filter((p) => p.category === category).map(resolveProductImages);
+  return productData
+    .filter((p) => p.category === category && isStorefrontVisible(p))
+    .map(resolveProductImages);
 }
 
 export function getComplementaryProduct(product: Product): Product | undefined {
   initializeProductData();
   const targetCategory: Category = product.category === 'hat' ? 'glasses' : 'hat';
-  const found = productData.find((p) => p.category === targetCategory && p.style === product.style);
+  const found = productData.find(
+    (p) => p.category === targetCategory && p.style === product.style && isStorefrontVisible(p)
+  );
   return found ? resolveProductImages(found) : undefined;
 }
 
@@ -173,11 +221,14 @@ export function searchProducts(query: string): Product[] {
   return productData
     .filter(
       (p) =>
-        p.name.toLowerCase().includes(lowerQuery) ||
-        p.style.toLowerCase().includes(lowerQuery) ||
-        p.colors.some((c) => c.toLowerCase().includes(lowerQuery)) ||
-        p.tags.some((t) => t.toLowerCase().includes(lowerQuery)) ||
-        p.description.toLowerCase().includes(lowerQuery)
+        isStorefrontVisible(p) &&
+        (
+          p.name.toLowerCase().includes(lowerQuery) ||
+          p.style.toLowerCase().includes(lowerQuery) ||
+          p.colors.some((c) => c.toLowerCase().includes(lowerQuery)) ||
+          p.tags.some((t) => t.toLowerCase().includes(lowerQuery)) ||
+          p.description.toLowerCase().includes(lowerQuery)
+        )
     )
     .map(resolveProductImages);
 }

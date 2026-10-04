@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search, Heart, ShoppingBag } from 'lucide-react';
+import { Menu, X, Search, Heart, ShoppingBag, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
@@ -114,6 +114,14 @@ export function Header() {
                 </span>
               )}
             </button>
+            <Link
+              to="/admin"
+              className="rounded-full p-2 text-primary hover:bg-black/5"
+              aria-label={t('nav.admin', language)}
+              title={t('nav.admin', language)}
+            >
+              <LayoutDashboard size={20} />
+            </Link>
           </div>
         </div>
       </header>
@@ -170,6 +178,14 @@ export function Header() {
                   >
                     <Heart size={20} />
                     {t('nav.wishlist', language)}
+                  </Link>
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex flex-col items-center gap-1 text-sm text-primary"
+                  >
+                    <LayoutDashboard size={20} />
+                    {t('nav.admin', language)}
                   </Link>
                   <button
                     type="button"

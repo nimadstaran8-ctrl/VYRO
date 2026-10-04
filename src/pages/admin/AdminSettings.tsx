@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Save, Globe, Bell, Shield, Palette } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -19,11 +19,7 @@ export function AdminSettings() {
   const language = lang as Language;
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [settings, setSettings] = useState<Settings>(getSettings());
-
-  useEffect(() => {
-    setSettings(getSettings());
-  }, []);
+  const [settings, setSettings] = useState<Settings>(() => getSettings());
 
   const handleSave = () => {
     setIsSaving(true);

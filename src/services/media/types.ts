@@ -14,6 +14,7 @@ export interface MediaImage {
   name: string;
   alt: string;
   description: string;
+  /** Displayable URL: an object URL for uploaded blobs, or a static site path. */
   url: string;
   thumbnailUrl: string;
   mimeType: string;
@@ -24,6 +25,12 @@ export interface MediaImage {
   usedIn: string[];
   createdAt: string;
   updatedAt: string;
+  /**
+   * Raw binary for uploaded images (in-memory only, never serialized).
+   * Present when `url` is an object URL; static site images have no blob and
+   * remain referenced by their persistent path.
+   */
+  blob?: Blob;
 }
 
 export interface MediaUploadData {
@@ -59,16 +66,6 @@ export interface UploadResult {
   success: boolean;
   media?: MediaImage;
   error?: string;
-}
-
-export interface StorageAdapter {
-  getAll(): Record<string, MediaImage>;
-  get(id: string): MediaImage | undefined;
-  add(image: MediaImage): { success: boolean; error?: string };
-  update(id: string, image: Partial<MediaImage>): { success: boolean; error?: string };
-  delete(id: string): { success: boolean; error?: string };
-  clear(): void;
-  reload(): void;
 }
 
 export function isValidImageMimeType(mimeType: string): boolean {

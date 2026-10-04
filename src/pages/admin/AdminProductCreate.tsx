@@ -7,10 +7,10 @@ import { ImageUpload, type UploadedImage } from '../../features/admin/components
 import { createProduct } from '../../services/catalog/productService';
 import { generateId } from '../../lib/id';
 import { CATEGORIES, STYLES, COLORS } from '../../constants/product';
-import type { Product, Category, Style, Color } from '../../types';
+import type { Product, ProductStatus, Category, Style, Color } from '../../types';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
-import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPrice } from '../../services/currency';
+import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPrice, formatTomanPrice } from '../../services/currency';
 
 interface FormData {
   name: string;
@@ -24,6 +24,7 @@ interface FormData {
   sizes: string;
   stock: string;
   tags: string;
+  status: ProductStatus;
   featured: boolean;
   isNew: boolean;
   isBestSeller: boolean;
@@ -52,6 +53,7 @@ const initialFormData: FormData = {
   sizes: 'One Size',
   stock: '',
   tags: '',
+  status: 'active',
   featured: false,
   isNew: false,
   isBestSeller: false,
@@ -112,6 +114,10 @@ export function AdminProductCreate() {
     bestSeller: t('admin.bestSeller', language),
     limited: t('admin.limited', language),
     limitedEdition: t('admin.limitedEdition', language),
+    productStatus: t('admin.productStatus', language),
+    statusActive: t('admin.statusActive', language),
+    statusDraft: t('admin.statusDraft', language),
+    statusOutOfStock: t('admin.statusOutOfStock', language),
     productImages: t('admin.productImages', language),
     cancel: t('admin.cancel', language),
     saveChanges: t('admin.saveChanges', language),
@@ -236,6 +242,7 @@ export function AdminProductCreate() {
         tags,
         images: productImages,
         primaryImage,
+        status: formData.status,
         rating: 0,
         reviewCount: 0,
         reviews: [],
@@ -372,6 +379,27 @@ export function AdminProductCreate() {
               ))}
             </div>
           </div>
+
+          <div className="mt-6">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-primary">
+              {content.productStatus}
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as ProductStatus }))}
+              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none sm:max-w-xs"
+              aria-label={content.productStatus}
+            >
+              <option value="active">{content.statusActive}</option>
+              <option value="draft">{content.statusDraft}</option>
+              <option value="out-of-stock">{content.statusOutOfStock}</option>
+            </select>
+            <p className="mt-1 text-xs text-text-secondary">
+              {language === 'fa'
+                ? 'محصولات پیش‌نویس در فروشگاه نمایش داده نمی‌شوند.'
+                : 'Draft products are hidden from the storefront.'}
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl bg-surface p-6 shadow-sm">
@@ -393,11 +421,11 @@ export function AdminProductCreate() {
                 error={errors.price}
                 required
               />
-              {language === 'fa' && currencyState.usdToTomanRate && (
+              {language === 'fa' && currencyState.usdToTomanRate > 0 && (
                 <div className="mt-2 text-sm text-text-secondary">
-                  <span>نرخ فعلی دلار: </span>
-                  <span className="font-medium">{formatRialPrice(currencyState.usdToTomanRate)}</span>
-                  <span> / USD</span>
+                  <span>نرخ فعلی: </span>
+                  <span className="font-medium">{formatTomanPrice(currencyState.usdToTomanRate)}</span>
+                  <span> / دلار</span>
                   {formData.price && parseFloat(formData.price) > 0 && (
                     <div className="mt-1">
                       <span>قیمت به ریال: </span>

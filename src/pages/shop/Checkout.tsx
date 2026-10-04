@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { CheckCircle2 } from 'lucide-react';
 import { SEO } from '../../components/ui/SEO';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -7,6 +8,13 @@ import { CartItem } from '../../features/cart/components/CartItem';
 import { useCartStore } from '../../stores/cartStore';
 import { useLanguageStore } from '../../stores/languageStore';
 import { formatPrice } from '../../lib/format';
+import { createOrder, type CreateOrderData } from '../../services/orders';
+import {
+  getCustomerByEmail,
+  createCustomer,
+  incrementCustomerOrderStats,
+} from '../../services/customers';
+import type { Order } from '../../types/order';
 
 interface FormData {
   firstName: string;
@@ -74,6 +82,8 @@ export function Checkout() {
   const language = useLanguageStore((state) => state.language);
   const currency = language === 'fa' ? 'rial' : 'usd';
   const [isPlacing, setIsPlacing] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -180,10 +190,60 @@ export function Checkout() {
     }
 
     setIsPlacing(true);
+    setOrderError(null);
+
+    const orderData: CreateOrderData = {
+      items: items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        color: item.color,
+        size: item.size,
+      })),
+      customer: {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        address: formData.address.trim() || undefined,
+        city: formData.city.trim() || undefined,
+        postalCode: formData.postalCode.trim() || undefined,
+        country: formData.country.trim() || undefined,
+      },
+    };
+
+    // Simulated payment processing delay, then persist the order locally.
     setTimeout(() => {
+      const result = createOrder(orderData);
+
+      if (!result.success || !result.order) {
+        setOrderError(content.orderFailed);
+        setIsPlacing(false);
+        return;
+      }
+
+      const order = result.order;
+
+      // Keep the customer directory in sync so the admin users page has
+      // real registration dates and order history.
+      const existingCustomer = getCustomerByEmail(order.customer?.email || formData.email);
+      if (existingCustomer) {
+        incrementCustomerOrderStats(existingCustomer.id, order.total);
+      } else {
+        const created = createCustomer({
+          firstName: order.customer?.firstName || formData.firstName,
+          lastName: order.customer?.lastName || formData.lastName,
+          email: order.customer?.email || formData.email,
+          phone: order.customer?.phone || formData.phone,
+        });
+        if (created.customer) {
+          incrementCustomerOrderStats(created.customer.id, order.total);
+        }
+      }
+
       clearCart();
-      navigate('/');
-    }, 1500);
+      setPlacedOrder(order);
+      setIsPlacing(false);
+    }, 800);
   };
 
   const getFieldError = (field: keyof FormErrors): string | undefined => {
@@ -221,7 +281,36 @@ export function Checkout() {
     cartEmpty: language === 'fa' ? 'سبد خرید شما خالی است' : 'Your cart is empty',
     addItemsBeforeCheckout: language === 'fa' ? 'قبل از پرداخت محصولاتی اضافه کنید.' : 'Add some items before checking out.',
     shopNow: language === 'fa' ? 'خرید کنید' : 'Shop Now',
+    orderPlaced: language === 'fa' ? 'سفارش شما با موفقیت ثبت شد' : 'Your order has been placed',
+    orderNumber: language === 'fa' ? 'شماره سفارش' : 'Order Number',
+    orderPlacedDesc:
+      language === 'fa'
+        ? 'این سفارش در پنل مدیریت قابل مشاهده است. داده‌ها به صورت محلی در مرورگر ذخیره شده‌اند.'
+        : 'The order is now visible in the admin panel. Data is stored locally in your browser.',
+    orderFailed: language === 'fa' ? 'خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.' : 'Failed to place the order. Please try again.',
   };
+
+  if (placedOrder) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <SEO title={content.title} description={content.title} />
+        <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
+        <h1 className="mt-6 text-3xl font-semibold text-primary">{content.orderPlaced}</h1>
+        <p className="mt-3 text-sm text-text-secondary">
+          {content.orderNumber}: <span className="font-medium text-primary" dir="ltr">{placedOrder.id}</span>
+        </p>
+        <p className="mt-2 text-sm text-text-secondary">
+          {content.total}: {formatPrice(placedOrder.total, currency)}
+        </p>
+        <p className="mt-4 text-xs text-text-secondary">{content.orderPlacedDesc}</p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            {language === 'fa' ? 'بازگشت به فروشگاه' : 'Back to Store'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -424,6 +513,11 @@ export function Checkout() {
                   <span>{formatPrice(total, currency)}</span>
                 </div>
               </div>
+              {orderError && (
+                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600" role="alert">
+                  {orderError}
+                </p>
+              )}
               <Button
                 type="submit"
                 variant="accent"

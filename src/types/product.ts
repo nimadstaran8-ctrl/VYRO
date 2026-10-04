@@ -8,6 +8,8 @@ export type Color = 'Black' | 'White' | 'Brown' | 'Beige' | 'Green' | 'Blue' | '
 
 export type SortOption = 'featured' | 'newest' | 'price-low' | 'price-high' | 'best-rated';
 
+export type ProductStatus = 'active' | 'draft' | 'out-of-stock';
+
 export interface Product {
   id: string;
   name: string;
@@ -18,6 +20,7 @@ export interface Product {
   description: string;
   images: string[];
   primaryImage?: string;
+  status?: ProductStatus;
   colors: Color[];
   sizes: string[];
   rating: number;

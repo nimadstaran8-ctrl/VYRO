@@ -1,4 +1,28 @@
-# React + TypeScript + Vite
+# VYRO
+
+Minimal premium hats & glasses storefront (React 19 + Vite + Tailwind 4) with an
+integrated admin panel.
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+- Storefront: http://localhost:5173
+- Admin panel: http://localhost:5173/admin/login — demo login is `nima1389` / `898989`
+  (frontend prototype only; see `docs/admin-panel.md` for security and
+  persistence limitations).
+
+## Admin panel
+
+Dashboard, product CRUD with statuses and image management, orders with
+six-status workflow, users, media library and store settings. Data persists to
+browser localStorage; there is no backend. Details and limitations are
+documented in [docs/admin-panel.md](docs/admin-panel.md).
+
+## React + TypeScript + Vite template notes
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

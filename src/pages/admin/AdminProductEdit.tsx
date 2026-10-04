@@ -1,16 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input, Textarea } from '../../components/ui/Input';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ImageUpload, type UploadedImage } from '../../features/admin/components/ImageUpload';
 import { getProductById, updateProduct, deleteProduct } from '../../services/catalog/productService';
 import { imageStorage } from '../../features/admin/services/imageStorage';
+import { subscribeToImageStoreChanges } from '../../lib/imageEvents';
 import { CATEGORIES, STYLES, COLORS } from '../../constants/product';
-import type { Product, Category, Style, Color } from '../../types';
+import type { Product, ProductStatus, Category, Style, Color } from '../../types';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
-import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPrice } from '../../services/currency';
+import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPrice, formatTomanPrice } from '../../services/currency';
 
 interface FormData {
   name: string;
@@ -24,6 +26,7 @@ interface FormData {
   sizes: string;
   stock: string;
   tags: string;
+  status: ProductStatus;
   featured: boolean;
   isNew: boolean;
   isBestSeller: boolean;
@@ -58,6 +61,7 @@ export function AdminProductEdit() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currencyState, setCurrencyState] = useState(getCurrencyState());
 
   useEffect(() => {
@@ -100,6 +104,10 @@ export function AdminProductEdit() {
     bestSeller: t('admin.bestSeller', language),
     limited: t('admin.limited', language),
     limitedEdition: t('admin.limitedEdition', language),
+    productStatus: t('admin.productStatus', language),
+    statusActive: t('admin.statusActive', language),
+    statusDraft: t('admin.statusDraft', language),
+    statusOutOfStock: t('admin.statusOutOfStock', language),
     productImages: t('admin.productImages', language),
     cancel: t('admin.cancel', language),
     saveChanges: t('admin.saveChanges', language),
@@ -123,7 +131,7 @@ export function AdminProductEdit() {
 
   useEffect(() => {
     const product = getProductById(id || '');
-    
+
     if (!product) {
       setNotFound(true);
       setIsLoading(false);
@@ -159,6 +167,7 @@ export function AdminProductEdit() {
       sizes: product.sizes.join(', '),
       stock: product.stock.toString(),
       tags: product.tags.join(', '),
+      status: product.status ?? 'active',
       featured: product.featured,
       isNew: product.isNew || false,
       isBestSeller: product.isBestSeller || false,
@@ -169,6 +178,18 @@ export function AdminProductEdit() {
     setOriginalImages(product.images);
     setIsLoading(false);
   }, [id]);
+
+  // Product images resolve asynchronously from IndexedDB — refresh only the
+  // image previews when the store hydrates or changes, keeping form edits.
+  useEffect(() => {
+    const resolveUrl = (imgId: string) =>
+      imageStorage.getUrl(imgId) ??
+      (imgId.startsWith('img_') ? '/images/site/fallback.svg' : imgId);
+
+    return subscribeToImageStoreChanges(() => {
+      setImages(prev => prev.map(img => ({ ...img, dataUrl: resolveUrl(img.id) })));
+    });
+  }, []);
 
   const handleNameChange = useCallback((name: string) => {
     if (!formData) return;
@@ -291,6 +312,7 @@ export function AdminProductEdit() {
         tags,
         images: productImages,
         primaryImage,
+        status: formData.status,
         featured: formData.featured,
         isNew: formData.isNew,
         isBestSeller: formData.isBestSeller,
@@ -318,14 +340,11 @@ export function AdminProductEdit() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!id) return;
-    
-    const confirmed = window.confirm(content.deleteConfirm);
-    if (!confirmed) return;
 
     const result = deleteProduct(id);
-    
+
     if (result.success) {
       images.forEach(img => {
         if (img.id.startsWith('img_')) {
@@ -335,6 +354,7 @@ export function AdminProductEdit() {
       navigate('/admin/products');
     } else {
       setErrors({ general: content.deleteError });
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -351,7 +371,7 @@ export function AdminProductEdit() {
       <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-primary">{content.productNotFound}</h1>
         <Button asChild className="mt-6">
-          <a href="/admin/products">{content.backToProducts}</a>
+          <Link to="/admin/products">{content.backToProducts}</Link>
         </Button>
       </div>
     );
@@ -374,7 +394,7 @@ export function AdminProductEdit() {
           </div>
           <Button
             variant="outline"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4 rtl:ml-2 rtl:mr-0 mr-2" />
@@ -482,6 +502,27 @@ export function AdminProductEdit() {
               ))}
             </div>
           </div>
+
+          <div className="mt-6">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-primary">
+              {content.productStatus}
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => prev ? ({ ...prev, status: e.target.value as ProductStatus }) : null)}
+              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none sm:max-w-xs"
+              aria-label={content.productStatus}
+            >
+              <option value="active">{content.statusActive}</option>
+              <option value="draft">{content.statusDraft}</option>
+              <option value="out-of-stock">{content.statusOutOfStock}</option>
+            </select>
+            <p className="mt-1 text-xs text-text-secondary">
+              {language === 'fa'
+                ? 'محصولات پیش‌نویس در فروشگاه نمایش داده نمی‌شوند.'
+                : 'Draft products are hidden from the storefront.'}
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl bg-surface p-6 shadow-sm">
@@ -503,11 +544,11 @@ export function AdminProductEdit() {
                 error={errors.price}
                 required
               />
-              {language === 'fa' && currencyState.usdToTomanRate && (
+              {language === 'fa' && currencyState.usdToTomanRate > 0 && (
                 <div className="mt-2 text-sm text-text-secondary">
-                  <span>نرخ فعلی دلار: </span>
-                  <span className="font-medium">{formatRialPrice(currencyState.usdToTomanRate)}</span>
-                  <span> / USD</span>
+                  <span>نرخ فعلی: </span>
+                  <span className="font-medium">{formatTomanPrice(currencyState.usdToTomanRate)}</span>
+                  <span> / دلار</span>
                   {formData.price && parseFloat(formData.price) > 0 && (
                     <div className="mt-1">
                       <span>قیمت به ریال: </span>
@@ -634,6 +675,17 @@ export function AdminProductEdit() {
           </Button>
         </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={content.delete}
+        message={content.deleteConfirm}
+        confirmText={content.delete}
+        cancelText={content.cancel}
+        variant="danger"
+      />
     </div>
   );
 }

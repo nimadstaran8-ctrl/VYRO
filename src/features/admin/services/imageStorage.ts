@@ -1,6 +1,45 @@
-const IMAGE_STORAGE_KEY = 'vyro_image_storage';
+import { MAX_IMAGE_FILE_SIZE } from '../../../config/storage';
+import { notifyImageStoreChanged } from '../../../lib/imageEvents';
+import { reportStoreSize, hasImageBudgetFor, getImageStorageUsage } from '../../../lib/imageUsage';
+import {
+  openDatabase,
+  requestAsPromise,
+  transactionDone,
+  dataUrlToBlob,
+} from '../../../lib/idb';
+
+const DB_NAME = 'vyro_image_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'images';
+const SIZE_KEY = 'product-images';
+
+/**
+ * Legacy localStorage key used before the move to IndexedDB. If it still
+ * exists, its base64 payloads are migrated into IndexedDB and the key is
+ * removed. localStorage could only hold ~5MB; IndexedDB removes that limit.
+ */
+const LEGACY_STORAGE_KEY = 'vyro_image_storage';
 
 export interface StoredImage {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+  blob: Blob;
+}
+
+interface CachedImage {
+  url: string;
+  size: number;
+}
+
+export interface ImageStorageData {
+  images: Record<string, StoredImage>;
+  version: number;
+}
+
+interface LegacyStoredImage {
   id: string;
   dataUrl: string;
   mimeType: string;
@@ -9,46 +48,22 @@ export interface StoredImage {
   createdAt: string;
 }
 
-export interface ImageStorageData {
-  images: Record<string, StoredImage>;
-  version: number;
-}
-
-const MAX_STORAGE_SIZE = 5 * 1024 * 1024;
-
-function getStorageData(): ImageStorageData {
-  try {
-    const data = localStorage.getItem(IMAGE_STORAGE_KEY);
-    if (data) {
-      return JSON.parse(data) as ImageStorageData;
-    }
-  } catch (e) {
-    console.error('Failed to read image storage:', e);
-  }
-  return { images: {}, version: 1 };
-}
-
-function setStorageData(data: ImageStorageData): void {
-  try {
-    const serialized = JSON.stringify(data);
-    if (serialized.length > MAX_STORAGE_SIZE) {
-      throw new Error('Image storage limit exceeded. Please remove some images.');
-    }
-    localStorage.setItem(IMAGE_STORAGE_KEY, serialized);
-  } catch (e) {
-    console.error('Failed to save image storage:', e);
-    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-      throw new Error('Storage quota exceeded. Please delete some images.');
-    }
-    throw e;
-  }
+function openImageDatabase(): Promise<IDBDatabase> {
+  return openDatabase(DB_NAME, STORE_NAME, DB_VERSION);
 }
 
 export class ImageStorage {
   private static instance: ImageStorage;
-  private cachedImages: Record<string, StoredImage> | null = null;
 
-  private constructor() {}
+  private db: IDBDatabase | null = null;
+  private openPromise: Promise<IDBDatabase> | null = null;
+  private hydratePromise: Promise<void> | null = null;
+  private cache = new Map<string, CachedImage>();
+  private available = true;
+
+  private constructor() {
+    this.hydratePromise = this.hydrate();
+  }
 
   static getInstance(): ImageStorage {
     if (!ImageStorage.instance) {
@@ -57,116 +72,208 @@ export class ImageStorage {
     return ImageStorage.instance;
   }
 
-  getAll(): Record<string, StoredImage> {
-    if (this.cachedImages === null) {
-      const data = getStorageData();
-      this.cachedImages = data.images;
+  private async getDb(): Promise<IDBDatabase> {
+    if (this.db) return this.db;
+    if (!this.openPromise) {
+      this.openPromise = openImageDatabase();
     }
-    return this.cachedImages;
+    this.db = await this.openPromise;
+    return this.db;
   }
 
-  get(id: string): StoredImage | undefined {
-    return this.getAll()[id];
-  }
+  /**
+   * Loads every stored image into the in-memory URL cache and migrates any
+   * legacy localStorage payloads. Runs once at startup; images resolve
+   * synchronously from the cache afterwards.
+   */
+  private async hydrate(): Promise<void> {
+    try {
+      const db = await this.getDb();
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const records = await requestAsPromise(tx.objectStore(STORE_NAME).getAll() as IDBRequest<StoredImage[]>);
 
-  async add(id: string, file: File): Promise<{ success: boolean; error?: string; dataUrl?: string }> {
-    const images = this.getAll();
-    
-    if (images[id]) {
-      return { success: false, error: 'Image with this ID already exists.' };
-    }
-
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        
-        try {
-          const storedImage: StoredImage = {
-            id,
-            dataUrl,
-            mimeType: file.type,
-            name: file.name,
-            size: file.size,
-            createdAt: new Date().toISOString(),
-          };
-
-          images[id] = storedImage;
-          this.cachedImages = images;
-          setStorageData({ images, version: 1 });
-          resolve({ success: true, dataUrl });
-        } catch {
-          resolve({ success: false, error: 'Failed to store image.' });
+      for (const record of records) {
+        if (!this.cache.has(record.id)) {
+          this.cache.set(record.id, { url: URL.createObjectURL(record.blob), size: record.size });
         }
-      };
-      reader.onerror = () => {
-        resolve({ success: false, error: 'Failed to read image file.' });
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+
+      await this.migrateLegacyImages(db);
+      reportStoreSize(SIZE_KEY, this.getTotalSize());
+    } catch {
+      // IndexedDB unavailable (private mode, test environment, ...):
+      // the app keeps working, stored images resolve to the fallback.
+      this.available = false;
+    }
+
+    notifyImageStoreChanged();
   }
 
-  addSync(id: string, dataUrl: string, metadata: { mimeType: string; name: string; size: number }): { success: boolean; error?: string } {
-    const images = this.getAll();
-    
-    if (images[id]) {
-      return { success: false, error: 'Image with this ID already exists.' };
+  private async migrateLegacyImages(db: IDBDatabase): Promise<void> {
+    let legacy: Record<string, LegacyStoredImage>;
+    try {
+      const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (!raw) return;
+      legacy = (JSON.parse(raw) as { images?: Record<string, LegacyStoredImage> }).images ?? {};
+    } catch {
+      return;
+    }
+
+    const entries = Object.values(legacy);
+    if (entries.length === 0) {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return;
     }
 
     try {
-      const storedImage: StoredImage = {
-        id,
-        dataUrl,
-        mimeType: metadata.mimeType,
-        name: metadata.name,
-        size: metadata.size,
-        createdAt: new Date().toISOString(),
-      };
+      // Decode everything BEFORE opening the write transaction: IndexedDB
+      // transactions auto-close when the event loop yields to other work.
+      const migrated: StoredImage[] = [];
+      for (const item of entries) {
+        if (this.cache.has(item.id)) continue;
+        try {
+          const blob = await dataUrlToBlob(item.dataUrl);
+          migrated.push({
+            id: item.id,
+            name: item.name,
+            mimeType: item.mimeType,
+            size: blob.size || item.size,
+            createdAt: item.createdAt,
+            blob,
+          });
+        } catch {
+          // Skip payloads that fail to decode; they would not render anyway.
+        }
+      }
 
-      images[id] = storedImage;
-      this.cachedImages = images;
-      setStorageData({ images, version: 1 });
-      return { success: true };
+      if (migrated.length > 0) {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        for (const record of migrated) {
+          store.put(record);
+          this.cache.set(record.id, { url: URL.createObjectURL(record.blob), size: record.size });
+        }
+        await transactionDone(tx);
+        notifyImageStoreChanged();
+      }
+
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } finally {
+      reportStoreSize(SIZE_KEY, this.getTotalSize());
+    }
+  }
+
+  /** Synchronous cache lookup — returns a displayable object URL or undefined. */
+  getUrl(id: string): string | undefined {
+    return this.cache.get(id)?.url;
+  }
+
+  has(id: string): boolean {
+    return this.cache.has(id);
+  }
+
+  async add(id: string, file: File): Promise<{ success: boolean; error?: string; dataUrl?: string }> {
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    if (this.cache.has(id)) {
+      return { success: false, error: 'Image with this ID already exists.' };
+    }
+
+    if (!hasImageBudgetFor(file.size)) {
+      return {
+        success: false,
+        error:
+          'Image storage budget exceeded. The limit is 200MB across all images. Please delete some images.',
+      };
+    }
+
+    try {
+      const db = await this.getDb();
+      const record: StoredImage = {
+        id,
+        name: file.name,
+        mimeType: file.type,
+        size: file.size,
+        createdAt: new Date().toISOString(),
+        blob: file,
+      };
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      await requestAsPromise(tx.objectStore(STORE_NAME).put(record) as IDBRequest<IDBValidKey>);
+
+      const url = URL.createObjectURL(file);
+      this.cache.set(id, { url, size: file.size });
+      reportStoreSize(SIZE_KEY, this.getTotalSize());
+      notifyImageStoreChanged();
+      return { success: true, dataUrl: url };
     } catch {
+      this.available = false;
       return { success: false, error: 'Failed to store image.' };
     }
   }
 
-  delete(id: string): { success: boolean; error?: string } {
-    const images = this.getAll();
-    
-    if (!images[id]) {
+  async delete(id: string): Promise<{ success: boolean; error?: string }> {
+    const cached = this.cache.get(id);
+    if (!cached) {
       return { success: false, error: 'Image not found.' };
     }
 
-    delete images[id];
-    this.cachedImages = images;
-    setStorageData({ images, version: 1 });
+    try {
+      const db = await this.getDb();
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      await requestAsPromise(tx.objectStore(STORE_NAME).delete(id) as IDBRequest<undefined>);
+    } catch {
+      // Remove from cache even if the database write fails — the image is
+      // gone for this session either way.
+    }
+
+    URL.revokeObjectURL(cached.url);
+    this.cache.delete(id);
+    reportStoreSize(SIZE_KEY, this.getTotalSize());
+    notifyImageStoreChanged();
     return { success: true };
   }
 
   clear(): void {
-    this.cachedImages = {};
-    setStorageData({ images: {}, version: 1 });
+    void (async () => {
+      try {
+        const db = await this.getDb();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        await requestAsPromise(tx.objectStore(STORE_NAME).clear() as IDBRequest<undefined>);
+      } catch {
+        // ignore
+      }
+      for (const cached of this.cache.values()) {
+        URL.revokeObjectURL(cached.url);
+      }
+      this.cache.clear();
+      reportStoreSize(SIZE_KEY, 0);
+      notifyImageStoreChanged();
+    })();
   }
 
   reload(): void {
-    this.cachedImages = null;
-    this.getAll();
+    if (!this.hydratePromise) {
+      this.hydratePromise = this.hydrate();
+    }
+  }
+
+  isAvailable(): boolean {
+    return this.available;
   }
 
   getTotalSize(): number {
-    const images = this.getAll();
-    return Object.values(images).reduce((total, img) => total + img.size, 0);
+    let total = 0;
+    for (const cached of this.cache.values()) {
+      total += cached.size;
+    }
+    return total;
   }
 
   getStorageUsage(): { used: number; limit: number; percentage: number } {
-    const used = this.getTotalSize();
-    return {
-      used,
-      limit: MAX_STORAGE_SIZE,
-      percentage: (used / MAX_STORAGE_SIZE) * 100,
-    };
+    return getImageStorageUsage();
   }
 }
 
@@ -174,14 +281,13 @@ export const imageStorage = ImageStorage.getInstance();
 
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  
+
   if (!allowedTypes.includes(file.type)) {
     return { valid: false, error: `Invalid file type "${file.type}". Allowed: JPG, JPEG, PNG, WEBP.` };
   }
 
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    return { valid: false, error: `File size exceeds 5MB limit.` };
+  if (file.size > MAX_IMAGE_FILE_SIZE) {
+    return { valid: false, error: 'File size exceeds 5MB limit.' };
   }
 
   return { valid: true };

@@ -1,17 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Mail, Phone, ShoppingBag, Calendar, DollarSign } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Mail, Phone, ShoppingBag, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
-import { getCustomerById, type Customer } from '../../services/customers';
-import { getOrders } from '../../services/orders';
+import { getCustomerById, deleteCustomer, type Customer } from '../../services/customers';
+import { getOrdersByCustomerEmail } from '../../services/orders';
+import { formatProductPrice } from '../../services/currency';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { ROUTES } from '../../constants/routes';
+import { getOrderStatusLabel, getOrderStatusColor } from '../../lib/orderStatus';
+import type { Order } from '../../types/order';
 
 export function AdminCustomerDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const found = getCustomerById(id || '');
@@ -19,24 +27,15 @@ export function AdminCustomerDetail() {
     setIsLoading(false);
   }, [id]);
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      processing: 'bg-yellow-100 text-yellow-800',
-      shipped: 'bg-blue-100 text-blue-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      processing: language === 'fa' ? 'در حال پردازش' : 'Processing',
-      shipped: language === 'fa' ? 'ارسال شده' : 'Shipped',
-      delivered: language === 'fa' ? 'تحویل داده شده' : 'Delivered',
-      cancelled: language === 'fa' ? 'لغو شده' : 'Cancelled',
-    };
-    return labels[status] || status;
+  const handleDelete = () => {
+    if (!customer) return;
+    const result = deleteCustomer(customer.id);
+    if (result.success) {
+      navigate(ROUTES.ADMIN_USERS);
+    } else {
+      setDeleteError(result.error || (language === 'fa' ? 'خطا در حذف کاربر' : 'Failed to delete user'));
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (isLoading) {
@@ -49,58 +48,73 @@ export function AdminCustomerDetail() {
 
   if (!customer) {
     return (
-      <div className="mx-auto max-w-4xl text-center py-16">
-        <h1 className="text-2xl font-semibold text-primary mb-4">
-          {language === 'fa' ? 'مشتری یافت نشد' : 'Customer Not Found'}
+      <div className="mx-auto max-w-4xl py-16 text-center">
+        <h1 className="mb-4 text-2xl font-semibold text-primary">
+          {language === 'fa' ? 'کاربر یافت نشد' : 'User Not Found'}
         </h1>
         <Link
-          to="/admin/customers"
+          to={ROUTES.ADMIN_USERS}
           className="text-primary hover:underline"
         >
-          {language === 'fa' ? 'بازگشت به مشتریان' : 'Back to Customers'}
+          {language === 'fa' ? 'بازگشت به کاربران' : 'Back to Users'}
         </Link>
       </div>
     );
   }
 
-  const allOrders = getOrders();
-  const customerOrders = allOrders.slice(0, 5);
+  // Real order history: only orders whose recorded customer email matches.
+  const customerOrders: Order[] = getOrdersByCustomerEmail(customer.email);
 
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
         <Link
-          to="/admin/customers"
-          className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors"
+          to={ROUTES.ADMIN_USERS}
+          className="inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary"
         >
           <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-          {t('adminNav.customers', language)}
+          {t('adminNav.users', language)}
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-primary">{customer.firstName} {customer.lastName}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{customer.email}</p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-primary">{customer.firstName} {customer.lastName}</h1>
+          <p className="mt-1 text-sm text-text-secondary" dir="ltr">{customer.email}</p>
+          {deleteError && (
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600" role="alert">
+              {deleteError}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+        >
+          <Trash2 className="h-4 w-4" />
+          {language === 'fa' ? 'حذف کاربر' : 'Delete User'}
+        </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="bg-surface rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-primary mb-4">
-            {language === 'fa' ? 'اطلاعات مشتری' : 'Customer Information'}
+        <div className="rounded-2xl bg-surface p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-primary">
+            {language === 'fa' ? 'اطلاعات کاربر' : 'User Information'}
           </h2>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-text-secondary" />
               <div>
                 <p className="text-xs text-text-secondary">{language === 'fa' ? 'ایمیل' : 'Email'}</p>
-                <p className="text-sm text-primary">{customer.email}</p>
+                <p className="text-sm text-primary" dir="ltr">{customer.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-text-secondary" />
               <div>
                 <p className="text-xs text-text-secondary">{language === 'fa' ? 'تلفن' : 'Phone'}</p>
-                <p className="text-sm text-primary">{customer.phone}</p>
+                <p className="text-sm text-primary" dir="ltr">{customer.phone || '—'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -113,8 +127,8 @@ export function AdminCustomerDetail() {
           </div>
         </div>
 
-        <div className="bg-surface rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-primary mb-4">
+        <div className="rounded-2xl bg-surface p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-primary">
             {language === 'fa' ? 'آمار' : 'Statistics'}
           </h2>
           <div className="space-y-4">
@@ -129,36 +143,42 @@ export function AdminCustomerDetail() {
               <DollarSign className="h-5 w-5 text-text-secondary" />
               <div>
                 <p className="text-xs text-text-secondary">{language === 'fa' ? 'مجموع خرید' : 'Total Spent'}</p>
-                <p className="text-2xl font-semibold text-primary">${customer.totalSpent}</p>
+                <p className="text-2xl font-semibold text-primary">
+                  {formatProductPrice({ priceUsd: customer.totalSpent, locale: language })}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-surface rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-primary mb-4">
-            {language === 'fa' ? 'سفارشات اخیر' : 'Recent Orders'}
+        <div className="rounded-2xl bg-surface p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-primary">
+            {language === 'fa' ? 'سفارشات این کاربر' : 'This User\'s Orders'}
           </h2>
           {customerOrders.length === 0 ? (
             <p className="text-sm text-text-secondary">
-              {language === 'fa' ? 'سفارشی وجود ندارد' : 'No orders yet'}
+              {language === 'fa'
+                ? 'هیچ سفارشی با ایمیل این کاربر ثبت نشده است.'
+                : 'No orders found matching this user\'s email.'}
             </p>
           ) : (
             <div className="space-y-3">
               {customerOrders.map((order) => (
                 <Link
                   key={order.id}
-                  to={`/admin/orders/${order.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-background hover:bg-primary/5 transition-colors"
+                  to={`${ROUTES.ADMIN_ORDERS}/${order.id}`}
+                  className="flex items-center justify-between rounded-lg bg-background p-3 transition-colors hover:bg-primary/5"
                 >
                   <div>
-                    <p className="font-medium text-primary text-sm">{order.id}</p>
+                    <p className="text-sm font-medium text-primary">{order.id}</p>
                     <p className="text-xs text-text-secondary">{order.date}</p>
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium text-primary text-sm">${order.total}</p>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {getStatusLabel(order.status)}
+                  <div className="text-end">
+                    <p className="text-sm font-medium text-primary">
+                      {formatProductPrice({ priceUsd: order.total, locale: language })}
+                    </p>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getOrderStatusColor(order.status)}`}>
+                      {getOrderStatusLabel(order.status, language)}
                     </span>
                   </div>
                 </Link>
@@ -167,6 +187,21 @@ export function AdminCustomerDetail() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={language === 'fa' ? 'حذف کاربر' : 'Delete User'}
+        message={
+          language === 'fa'
+            ? `آیا از حذف ${customer.firstName} ${customer.lastName} اطمینان دارید؟ سفارش‌های او همچنان در لیست سفارشات باقی می‌مانند.`
+            : `Are you sure you want to delete ${customer.firstName} ${customer.lastName}? Their orders remain in the orders list.`
+        }
+        confirmText={language === 'fa' ? 'حذف' : 'Delete'}
+        cancelText={t('common.cancel', language)}
+        variant="danger"
+      />
     </div>
   );
 }

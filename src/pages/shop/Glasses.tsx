@@ -2,11 +2,16 @@ import { useMemo } from 'react';
 import { SEO } from '../../components/ui/SEO';
 import { ProductGrid } from '../../components/product/ProductGrid';
 import { getProductsByCategory } from '../../services/catalog/productService';
+import { useImageStoreVersion } from '../../hooks/useImageStoreVersion';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
 
 export function Glasses() {
-  const glasses = useMemo(() => getProductsByCategory('glasses'), []);
+  const imageVersion = useImageStoreVersion();
+  const glasses = useMemo(() => {
+    void imageVersion; // recompute when the image store hydrates or changes
+    return getProductsByCategory('glasses');
+  }, [imageVersion]);
   const language = useLanguageStore((state) => state.language);
 
   return (

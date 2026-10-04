@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { 
   Search, Upload, Edit2, Trash2, X, ChevronDown, 
   ImageIcon, AlertTriangle, RefreshCw
@@ -23,6 +23,7 @@ import {
   type MediaSortField,
   type MediaSortOrder,
 } from '../../services/media';
+import { subscribeToImageStoreChanges } from '../../lib/imageEvents';
 import { ReusableImage } from '../../components/ui/ReusableImage';
 
 const LOCATION_OPTIONS: ImageLocation[] = ['product', 'collection', 'hero', 'banner', 'category', 'site', 'other'];
@@ -41,6 +42,9 @@ export function AdminMediaLibrary() {
   const [deletingImage, setDeletingImage] = useState<MediaImage | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // Keep the grid in sync with the image store (hydration + mutations).
+  useEffect(() => subscribeToImageStoreChanges(() => setImages(getAllImages())), []);
 
   const showNotification = useCallback((type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -258,8 +262,8 @@ export function AdminMediaLibrary() {
         <ConfirmDialog
           isOpen={!!deletingImage}
           onClose={() => setDeletingImage(null)}
-          onConfirm={() => {
-            const result = deleteImage(deletingImage.id);
+          onConfirm={async () => {
+            const result = await deleteImage(deletingImage.id);
             if (result.success) {
               handleDeleteSuccess();
             } else {
@@ -347,70 +351,98 @@ interface UploadModalProps {
 }
 
 function UploadModal({ language, onClose, onSuccess, onError }: UploadModalProps) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [alt, setAlt] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState<ImageLocation>('product');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (selectedFile: File) => {
-    if (!selectedFile.type.startsWith('image/')) {
-      onError(t('media.invalidFile', language));
-      return;
+  const handleFilesSelect = (selectedFiles: FileList | null) => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    const valid: File[] = [];
+    for (const file of Array.from(selectedFiles)) {
+      if (!file.type.startsWith('image/')) {
+        onError(t('media.invalidFile', language));
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        onError(t('media.fileTooLarge', language));
+        continue;
+      }
+      valid.push(file);
     }
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      onError(t('media.fileTooLarge', language));
-      return;
-    }
-    setFile(selectedFile);
+
+    if (valid.length === 0) return;
+
+    setFiles(valid);
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(selectedFile);
+    reader.readAsDataURL(valid[0]);
     if (!name) {
-      setName(selectedFile.name.replace(/\.[^/.]+$/, ''));
+      setName(valid[0].name.replace(/\.[^/.]+$/, ''));
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) handleFileSelect(droppedFile);
+    handleFilesSelect(e.dataTransfer.files);
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
     setIsUploading(true);
-    const result = await uploadImage({
-      file,
-      name,
-      alt,
-      description,
-      location,
-    });
+    setUploadProgress({ done: 0, total: files.length });
+
+    let succeeded = 0;
+    let lastError: string | null = null;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileLabel = files.length > 1 ? file.name.replace(/\.[^/.]+$/, '') : name;
+      const result = await uploadImage({
+        file,
+        name: fileLabel || file.name,
+        alt: files.length > 1 ? alt || fileLabel || file.name : alt,
+        description,
+        location,
+      });
+      if (result.success) {
+        succeeded++;
+      } else {
+        lastError = result.error || t('media.uploadError', language);
+      }
+      setUploadProgress({ done: i + 1, total: files.length });
+    }
+
     setIsUploading(false);
-    if (result.success) {
+
+    if (succeeded > 0) {
       onSuccess();
     } else {
-      onError(result.error || t('media.uploadError', language));
+      onError(lastError || t('media.uploadError', language));
     }
   };
+
+  const total = files.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-lg rounded-2xl bg-surface p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-primary">{t('media.uploadNew', language)}</h2>
-          <button onClick={onClose} className="p-1 text-text-secondary hover:text-primary">
+          <button onClick={onClose} className="p-1 text-text-secondary hover:text-primary" aria-label={t('common.close', language)}>
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {!file ? (
+        {total === 0 ? (
           <div
             onDrop={handleDrop}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -424,7 +456,11 @@ function UploadModal({ language, onClose, onSuccess, onError }: UploadModalProps
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+              multiple
+              onChange={(e) => {
+                handleFilesSelect(e.target.files);
+                e.target.value = '';
+              }}
               className="hidden"
             />
             <Upload className="h-10 w-10 mx-auto text-text-secondary mb-3" />
@@ -437,6 +473,11 @@ function UploadModal({ language, onClose, onSuccess, onError }: UploadModalProps
               <div className="aspect-video rounded-xl overflow-hidden bg-background">
                 <img src={preview} alt="Preview" className="h-full w-full object-contain" />
               </div>
+            )}
+            {total > 1 && (
+              <p className="rounded-lg bg-background px-3 py-2 text-xs text-text-secondary">
+                {total} {t('media.filesSelected', language)}
+              </p>
             )}
             <Input
               label={t('media.imageName', language)}
@@ -485,11 +526,13 @@ function UploadModal({ language, onClose, onSuccess, onError }: UploadModalProps
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!file || isUploading}
+            disabled={total === 0 || isUploading}
             isLoading={isUploading}
             className="flex-1"
           >
-            {isUploading ? t('media.uploading', language) : t('media.upload', language)}
+            {isUploading
+              ? `${t('media.uploading', language)} (${uploadProgress.done}/${uploadProgress.total})`
+              : t('media.upload', language)}
           </Button>
         </div>
       </div>
@@ -512,9 +555,9 @@ function EditModal({ image, language, onClose, onSuccess, onError }: EditModalPr
   const [location, setLocation] = useState<ImageLocation>(image.location);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    const result = updateImage(image.id, { name, alt, description, location });
+    const result = await updateImage(image.id, { name, alt, description, location });
     setIsSaving(false);
     if (result.success) {
       onSuccess();

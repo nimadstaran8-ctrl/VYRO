@@ -1,3 +1,5 @@
+import { logActivity } from '../logs/logService';
+
 const SETTINGS_STORAGE_KEY = 'vyro_settings';
 
 export interface StoreSettings {
@@ -111,6 +113,7 @@ export function updateStoreSettings(updates: Partial<StoreSettings>): { success:
     const settings = getSettingsData();
     settings.store = { ...settings.store, ...updates };
     setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'store' } });
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save store settings' };
@@ -126,6 +129,7 @@ export function updateLanguageSettings(updates: Partial<LanguageSettings>): { su
     const settings = getSettingsData();
     settings.language = { ...settings.language, ...updates };
     setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'language' } });
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save language settings' };
@@ -139,12 +143,13 @@ export function getCurrencySettings(): CurrencySettings {
 export function updateCurrencySettings(updates: Partial<CurrencySettings>): { success: boolean; error?: string } {
   try {
     const settings = getSettingsData();
-    settings.currency = { 
-      ...settings.currency, 
+    settings.currency = {
+      ...settings.currency,
       ...updates,
       exchangeRateLastUpdated: updates.exchangeRate ? new Date().toISOString() : settings.currency.exchangeRateLastUpdated,
     };
     setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'currency' } });
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save currency settings' };
@@ -160,6 +165,7 @@ export function updateHomepageSettings(updates: Partial<HomepageSettings>): { su
     const settings = getSettingsData();
     settings.homepage = { ...settings.homepage, ...updates };
     setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'homepage' } });
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save homepage settings' };
@@ -169,6 +175,7 @@ export function updateHomepageSettings(updates: Partial<HomepageSettings>): { su
 export function resetSettings(): { success: boolean } {
   try {
     setSettingsData({ ...DEFAULT_SETTINGS });
+    logActivity({ type: 'settings-updated', detail: { section: 'reset' } });
     return { success: true };
   } catch {
     return { success: false };

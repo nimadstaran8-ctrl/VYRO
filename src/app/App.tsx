@@ -5,6 +5,7 @@ import { Layout, PageTransition } from './routes/routeConfig';
 import { routeConfig, type RouteConfig } from './routes/routes';
 import { useLanguageStore } from '../stores/languageStore';
 import { getDirection } from '../lib/i18n';
+import { useImageStoreVersion } from '../hooks/useImageStoreVersion';
 
 function PageLoader() {
   return (
@@ -67,6 +68,10 @@ function AnimatedRoutes() {
 export default function App() {
   const language = useLanguageStore((state) => state.language);
   const direction = getDirection(language);
+
+  // Re-render the tree when local image stores hydrate or change so product
+  // and media images resolve as soon as they are available.
+  useImageStoreVersion();
 
   useEffect(() => {
     document.documentElement.dir = direction;

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Save, Image, Type, FileText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
 import { getHomepageSettings, updateHomepageSettings, type HomepageSettings } from '../../services/settings';
-import { getAllImages } from '../../services/media';
+import { getAllImages, resolveMediaRef } from '../../services/media';
 import { Link } from 'react-router-dom';
 
 export function AdminHomepage() {
@@ -13,21 +13,7 @@ export function AdminHomepage() {
   const language = lang as Language;
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState<HomepageSettings>({
-    heroTitle: '',
-    heroSubtitle: '',
-    heroImage: '',
-    featuredTitle: '',
-    aboutTitle: '',
-    aboutDescription: '',
-    featuredProductIds: [],
-    featuredCategoryIds: [],
-  });
-
-  useEffect(() => {
-    const settings = getHomepageSettings();
-    setFormData(settings);
-  }, []);
+  const [formData, setFormData] = useState<HomepageSettings>(() => getHomepageSettings());
 
   const handleSave = () => {
     setIsSaving(true);
@@ -97,7 +83,7 @@ export function AdminHomepage() {
               <div className="flex gap-4">
                 <div className="w-32 h-32 rounded-lg overflow-hidden bg-background flex-shrink-0">
                   <img
-                    src={formData.heroImage || '/images/site/fallback.svg'}
+                    src={resolveMediaRef(formData.heroImage) || '/images/site/fallback.svg'}
                     alt="Hero"
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -130,9 +116,9 @@ export function AdminHomepage() {
                       <button
                         key={img.id}
                         type="button"
-                        onClick={() => handleChange('heroImage', img.url)}
+                        onClick={() => handleChange('heroImage', img.blob ? img.id : img.url)}
                         className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                          formData.heroImage === img.url ? 'border-primary' : 'border-transparent hover:border-primary/50'
+                          formData.heroImage === (img.blob ? img.id : img.url) ? 'border-primary' : 'border-transparent hover:border-primary/50'
                         }`}
                       >
                         <img src={img.thumbnailUrl} alt={img.name} className="w-full h-full object-cover" />

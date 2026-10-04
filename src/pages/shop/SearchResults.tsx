@@ -4,6 +4,7 @@ import { SEO } from '../../components/ui/SEO';
 import { ProductGrid } from '../../components/product/ProductGrid';
 import { Button } from '../../components/ui/Button';
 import { searchProducts } from '../../services/catalog/productService';
+import { useImageStoreVersion } from '../../hooks/useImageStoreVersion';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
 
@@ -12,11 +13,13 @@ export function SearchResults() {
   const query = searchParams.get('q') || '';
   const lowerQuery = query.trim().toLowerCase();
   const language = useLanguageStore((state) => state.language);
+  const imageVersion = useImageStoreVersion();
 
   const matchedProducts = useMemo(() => {
+    void imageVersion; // recompute when the image store hydrates or changes
     if (!lowerQuery) return [];
     return searchProducts(query);
-  }, [lowerQuery, query]);
+  }, [lowerQuery, query, imageVersion]);
 
   return (
     <>

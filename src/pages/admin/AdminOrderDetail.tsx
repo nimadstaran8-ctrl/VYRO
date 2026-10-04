@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Package, MapPin, CreditCard } from 'lucide-react';
+import { ArrowRight, Package, MapPin, CreditCard, Mail, Phone } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
-import type { Order } from '../../types/order';
+import type { Order, OrderStatus } from '../../types/order';
 import { getOrderById, updateOrderStatus } from '../../services/orders';
+import { formatProductPrice } from '../../services/currency';
+import { ORDER_STATUSES, getOrderStatusLabel, getOrderStatusColor } from '../../lib/orderStatus';
 
 export function AdminOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +16,7 @@ export function AdminOrderDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   useEffect(() => {
     const found = getOrderById(id || '');
@@ -21,37 +24,20 @@ export function AdminOrderDetail() {
     setIsLoading(false);
   }, [id]);
 
-  const handleStatusUpdate = async (newStatus: Order['status']) => {
+  const handleStatusUpdate = (newStatus: OrderStatus) => {
     if (!order || isUpdating) return;
-    
+
     setIsUpdating(true);
+    setUpdateError(null);
     const result = updateOrderStatus(order.id, newStatus);
-    
+
     if (result.success) {
       setOrder({ ...order, status: newStatus });
+    } else {
+      setUpdateError(result.error || (language === 'fa' ? 'خطا در به‌روزرسانی وضعیت' : 'Failed to update status'));
     }
-    
+
     setIsUpdating(false);
-  };
-
-  const getStatusLabel = (status: Order['status']) => {
-    const labels: Record<Order['status'], string> = {
-      processing: language === 'fa' ? 'در حال پردازش' : 'Processing',
-      shipped: language === 'fa' ? 'ارسال شده' : 'Shipped',
-      delivered: language === 'fa' ? 'تحویل داده شده' : 'Delivered',
-      cancelled: language === 'fa' ? 'لغو شده' : 'Cancelled',
-    };
-    return labels[status];
-  };
-
-  const getStatusColor = (status: Order['status']) => {
-    const colors: Record<Order['status'], string> = {
-      processing: 'bg-yellow-100 text-yellow-800',
-      shipped: 'bg-blue-100 text-blue-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status];
   };
 
   if (isLoading) {
@@ -64,8 +50,8 @@ export function AdminOrderDetail() {
 
   if (!order) {
     return (
-      <div className="mx-auto max-w-4xl text-center py-16">
-        <h1 className="text-2xl font-semibold text-primary mb-4">
+      <div className="mx-auto max-w-4xl py-16 text-center">
+        <h1 className="mb-4 text-2xl font-semibold text-primary">
           {language === 'fa' ? 'سفارش یافت نشد' : 'Order Not Found'}
         </h1>
         <Link
@@ -83,27 +69,27 @@ export function AdminOrderDetail() {
       <div className="mb-6">
         <Link
           to="/admin/orders"
-          className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary"
         >
           <ArrowRight className="h-4 w-4 rtl:rotate-180" />
           {t('adminNav.orders', language)}
         </Link>
       </div>
 
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-primary">{order.id}</h1>
           <p className="mt-1 text-sm text-text-secondary">
             {language === 'fa' ? 'تاریخ:' : 'Date:'} {order.date}
           </p>
         </div>
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-          {getStatusLabel(order.status)}
+        <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${getOrderStatusColor(order.status)}`}>
+          {getOrderStatusLabel(order.status, language)}
         </span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="bg-surface rounded-2xl p-6 shadow-sm">
+        <div className="rounded-2xl bg-surface p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-primary">
@@ -116,7 +102,7 @@ export function AdminOrderDetail() {
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="h-16 w-16 rounded-lg object-cover bg-background"
+                  className="h-16 w-16 rounded-lg bg-background object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/site/fallback.svg';
                   }}
@@ -127,21 +113,27 @@ export function AdminOrderDetail() {
                     {item.color} / {item.size}
                   </p>
                   <p className="text-sm text-text-secondary">
-                    ${item.price} × {item.quantity}
+                    {formatProductPrice({ priceUsd: item.price, locale: language })} × {item.quantity}
                   </p>
                 </div>
-                <p className="font-medium text-primary">${item.price * item.quantity}</p>
+                <p className="font-medium text-primary">
+                  {formatProductPrice({ priceUsd: item.price * item.quantity, locale: language })}
+                </p>
               </div>
             ))}
           </div>
-          <div className="mt-6 border-t border-border pt-4 space-y-2">
+          <div className="mt-6 space-y-2 border-t border-border pt-4">
             <div className="flex justify-between text-sm">
               <span className="text-text-secondary">{language === 'fa' ? 'جمع جزء' : 'Subtotal'}</span>
-              <span className="text-primary">${order.subtotal}</span>
+              <span className="text-primary">{formatProductPrice({ priceUsd: order.subtotal, locale: language })}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-text-secondary">{language === 'fa' ? 'هزینه ارسال' : 'Shipping'}</span>
-              <span className="text-primary">{order.shipping === 0 ? (language === 'fa' ? 'رایگان' : 'Free') : `$${order.shipping}`}</span>
+              <span className="text-primary">
+                {order.shipping === 0
+                  ? (language === 'fa' ? 'رایگان' : 'Free')
+                  : formatProductPrice({ priceUsd: order.shipping, locale: language })}
+              </span>
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
@@ -149,29 +141,60 @@ export function AdminOrderDetail() {
                 <span>-${order.discount}</span>
               </div>
             )}
-            <div className="flex justify-between font-semibold text-lg pt-2 border-t border-border">
+            <div className="flex justify-between border-t border-border pt-2 text-lg font-semibold">
               <span>{language === 'fa' ? 'مجموع' : 'Total'}</span>
-              <span className="text-primary">${order.total}</span>
+              <span className="text-primary">{formatProductPrice({ priceUsd: order.total, locale: language })}</span>
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-surface rounded-2xl p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold text-primary">
-                {language === 'fa' ? 'آدرس ارسال' : 'Shipping Address'}
+                {language === 'fa' ? 'اطلاعات مشتری' : 'Customer Information'}
               </h2>
             </div>
-            <div className="text-sm text-text-secondary space-y-1">
-              <p className="font-medium text-primary">Customer</p>
-              <p>Tehran, Iran</p>
-              <p>+98 912 345 6789</p>
-            </div>
+            {order.customer ? (
+              <div className="space-y-3 text-sm">
+                <p className="font-medium text-primary">
+                  {order.customer.firstName} {order.customer.lastName}
+                </p>
+                {order.customer.email && (
+                  <p className="flex items-center gap-2 text-text-secondary" dir="ltr">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    {order.customer.email}
+                  </p>
+                )}
+                {order.customer.phone && (
+                  <p className="flex items-center gap-2 text-text-secondary" dir="ltr">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    {order.customer.phone}
+                  </p>
+                )}
+                {(order.customer.address || order.customer.city || order.customer.country) && (
+                  <div className="text-text-secondary">
+                    {order.customer.address && <p>{order.customer.address}</p>}
+                    {(order.customer.city || order.customer.postalCode) && (
+                      <p>
+                        {[order.customer.city, order.customer.postalCode].filter(Boolean).join(' - ')}
+                      </p>
+                    )}
+                    {order.customer.country && <p>{order.customer.country}</p>}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                {language === 'fa'
+                  ? 'اطلاعات مشتری برای این سفارش ثبت نشده است.'
+                  : 'No customer information was recorded for this order.'}
+              </p>
+            )}
           </div>
 
-          <div className="bg-surface rounded-2xl p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold text-primary">
@@ -179,48 +202,32 @@ export function AdminOrderDetail() {
               </h2>
             </div>
             <p className="text-sm text-text-secondary">
-              {language === 'fa' ? 'پرداخت آنلاین' : 'Online Payment'}
+              {language === 'fa' ? 'پرداخت آنلاین (آزمایشی)' : 'Online Payment (demo)'}
             </p>
           </div>
 
-          <div className="bg-surface rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-primary mb-4">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-primary">
               {language === 'fa' ? 'به‌روزرسانی وضعیت' : 'Update Status'}
             </h2>
+            {updateError && (
+              <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-600" role="alert">
+                {updateError}
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
-              <Button 
-                size="sm" 
-                variant={order.status === 'processing' ? 'primary' : 'outline'}
-                onClick={() => handleStatusUpdate('processing')}
-                disabled={isUpdating}
-              >
-                {language === 'fa' ? 'در حال پردازش' : 'Processing'}
-              </Button>
-              <Button 
-                size="sm" 
-                variant={order.status === 'shipped' ? 'primary' : 'outline'}
-                onClick={() => handleStatusUpdate('shipped')}
-                disabled={isUpdating}
-              >
-                {language === 'fa' ? 'ارسال شده' : 'Shipped'}
-              </Button>
-              <Button 
-                size="sm" 
-                variant={order.status === 'delivered' ? 'primary' : 'outline'}
-                onClick={() => handleStatusUpdate('delivered')}
-                disabled={isUpdating}
-              >
-                {language === 'fa' ? 'تحویل داده شده' : 'Delivered'}
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-red-500 hover:bg-red-50"
-                onClick={() => handleStatusUpdate('cancelled')}
-                disabled={isUpdating}
-              >
-                {language === 'fa' ? 'لغو' : 'Cancel'}
-              </Button>
+              {ORDER_STATUSES.map((status) => (
+                <Button
+                  key={status}
+                  size="sm"
+                  variant={order.status === status ? 'primary' : 'outline'}
+                  onClick={() => handleStatusUpdate(status)}
+                  disabled={isUpdating}
+                  className={status === 'cancelled' && order.status !== status ? 'text-red-500 hover:bg-red-50' : ''}
+                >
+                  {getOrderStatusLabel(status, language)}
+                </Button>
+              ))}
             </div>
           </div>
         </div>

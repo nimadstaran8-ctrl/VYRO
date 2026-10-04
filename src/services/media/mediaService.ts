@@ -11,90 +11,51 @@ import {
   generateMediaId,
   isValidImageMimeType,
 } from './types';
-import { getStorageAdapter, initializeDefaultMedia } from './mediaRepository';
+import { getMediaRepository, type StoredMediaRecord } from './mediaRepository';
+import { logActivity } from '../logs/logService';
 
 const FALLBACK_IMAGE = '/images/site/fallback.svg';
 
-let initialized = false;
-
-function ensureInitialized(): void {
-  if (!initialized) {
-    initializeDefaultMedia();
-    initialized = true;
-  }
-}
-
-function createImageFromUpload(
-  id: string,
-  dataUrl: string,
-  uploadData: MediaUploadData,
-  file: File
-): MediaImage {
-  const now = new Date().toISOString();
-  return {
-    id,
-    name: uploadData.name || file.name,
-    alt: uploadData.alt || uploadData.name || file.name,
-    description: uploadData.description || '',
-    url: dataUrl,
-    thumbnailUrl: dataUrl,
-    mimeType: file.type,
-    size: file.size,
-    location: uploadData.location,
-    usedIn: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-}
+const repository = getMediaRepository();
 
 export async function uploadImage(
   uploadData: MediaUploadData
 ): Promise<UploadResult> {
-  ensureInitialized();
-
   const validation = validateImageFile(uploadData.file);
   if (!validation.valid) {
     return { success: false, error: validation.error };
   }
 
   const id = generateMediaId();
-  const storage = getStorageAdapter();
+  const now = new Date().toISOString();
+  const record: StoredMediaRecord = {
+    id,
+    name: uploadData.name || uploadData.file.name,
+    alt: uploadData.alt || uploadData.name || uploadData.file.name,
+    description: uploadData.description || '',
+    mimeType: uploadData.file.type,
+    size: uploadData.file.size,
+    location: uploadData.location,
+    usedIn: [],
+    createdAt: now,
+    updatedAt: now,
+    blob: uploadData.file,
+  };
 
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      
-      try {
-        const image = createImageFromUpload(id, dataUrl, uploadData, uploadData.file);
-        const result = storage.add(image);
-        
-        if (result.success) {
-          resolve({ success: true, media: image });
-        } else {
-          resolve({ success: false, error: result.error });
-        }
-      } catch {
-        resolve({ success: false, error: 'Failed to process image.' });
-      }
-    };
-
-    reader.onerror = () => {
-      resolve({ success: false, error: 'Failed to read file.' });
-    };
-
-    reader.readAsDataURL(uploadData.file);
-  });
+  const result = await repository.put(record);
+  if (result.success) {
+    logActivity({ type: 'media-uploaded', entityId: id, detail: { name: record.name } });
+    return { success: true, media: repository.get(id) };
+  }
+  return { success: false, error: result.error };
 }
 
 export function getImage(id: string): MediaImage | undefined {
-  ensureInitialized();
-  return getStorageAdapter().get(id);
+  return repository.get(id);
 }
 
 export function getImageUrl(id: string): string {
-  const image = getImage(id);
+  const image = repository.get(id);
   if (image) {
     return image.url;
   }
@@ -104,10 +65,19 @@ export function getImageUrl(id: string): string {
   return FALLBACK_IMAGE;
 }
 
+/**
+ * Resolves a persisted image reference: media record IDs (uploaded images)
+ * resolve to their session object URL, plain paths/URLs pass through.
+ */
+export function resolveMediaRef(ref: string): string {
+  if (!ref) return FALLBACK_IMAGE;
+  const image = repository.get(ref);
+  if (image) return image.url;
+  return ref;
+}
+
 export function getAllImages(): MediaImage[] {
-  ensureInitialized();
-  const images = getStorageAdapter().getAll();
-  return Object.values(images);
+  return repository.getAll();
 }
 
 export function getImagesByLocation(location: MediaLocation): MediaImage[] {
@@ -118,88 +88,73 @@ export function getImagesUsedIn(usageId: string): MediaImage[] {
   return getAllImages().filter(img => img.usedIn.includes(usageId));
 }
 
-export function updateImage(id: string, updates: MediaUpdateData): { success: boolean; error?: string } {
-  ensureInitialized();
-  return getStorageAdapter().update(id, updates);
+export async function updateImage(
+  id: string,
+  updates: MediaUpdateData
+): Promise<{ success: boolean; error?: string }> {
+  const result = await repository.update(id, updates);
+  if (result.success) {
+    logActivity({ type: 'media-updated', entityId: id, detail: { name: repository.get(id)?.name } });
+  }
+  return result;
 }
 
-export function deleteImage(id: string): { success: boolean; error?: string } {
-  ensureInitialized();
-  return getStorageAdapter().delete(id);
+export async function deleteImage(id: string): Promise<{ success: boolean; error?: string }> {
+  const name = repository.get(id)?.name;
+  const result = await repository.remove(id);
+  if (result.success) {
+    logActivity({ type: 'media-deleted', entityId: id, detail: { name } });
+  }
+  return result;
 }
 
-export function replaceImage(
+export async function replaceImage(
   id: string,
   newFile: File
 ): Promise<UploadResult> {
-  return new Promise((resolve) => {
-    const validation = validateImageFile(newFile);
-    if (!validation.valid) {
-      resolve({ success: false, error: validation.error });
-      return;
-    }
+  const validation = validateImageFile(newFile);
+  if (!validation.valid) {
+    return { success: false, error: validation.error };
+  }
 
-    const reader = new FileReader();
-    
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const now = new Date().toISOString();
-      
-      try {
-        const storage = getStorageAdapter();
-        const existing = storage.get(id);
-        
-        if (!existing) {
-          resolve({ success: false, error: 'Image not found.' });
-          return;
-        }
+  const existing = repository.get(id);
+  if (!existing) {
+    return { success: false, error: 'Image not found.' };
+  }
 
-        const updated: MediaImage = {
-          ...existing,
-          url: dataUrl,
-          thumbnailUrl: dataUrl,
-          mimeType: newFile.type,
-          size: newFile.size,
-          updatedAt: now,
-        };
+  const record: StoredMediaRecord = {
+    id,
+    name: existing.name,
+    alt: existing.alt,
+    description: existing.description,
+    mimeType: newFile.type,
+    size: newFile.size,
+    location: existing.location,
+    usedIn: existing.usedIn,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+    blob: newFile,
+  };
 
-        const result = storage.update(id, updated);
-        
-        if (result.success) {
-          resolve({ success: true, media: updated });
-        } else {
-          resolve({ success: false, error: result.error });
-        }
-      } catch {
-        resolve({ success: false, error: 'Failed to replace image.' });
-      }
-    };
-
-    reader.onerror = () => {
-      resolve({ success: false, error: 'Failed to read file.' });
-    };
-
-    reader.readAsDataURL(newFile);
-  });
+  const result = await repository.put(record);
+  if (result.success) {
+    logActivity({ type: 'media-updated', entityId: id, detail: { name: record.name } });
+    return { success: true, media: repository.get(id) };
+  }
+  return { success: false, error: result.error };
 }
 
-export function registerImageUsage(imageId: string, usageId: string): void {
-  ensureInitialized();
-  const image = getStorageAdapter().get(imageId);
+export async function registerImageUsage(imageId: string, usageId: string): Promise<void> {
+  const image = repository.get(imageId);
   if (image && !image.usedIn.includes(usageId)) {
-    getStorageAdapter().update(imageId, {
-      usedIn: [...image.usedIn, usageId],
-    });
+    await repository.setUsedIn(imageId, [...image.usedIn, usageId]);
   }
 }
 
-export function unregisterImageUsage(imageId: string, usageId: string): void {
-  ensureInitialized();
-  const image = getStorageAdapter().get(imageId);
-  if (image) {
-    getStorageAdapter().update(imageId, {
-      usedIn: image.usedIn.filter(id => id !== usageId),
-    });
+export async function unregisterImageUsage(imageId: string, usageId: string): Promise<void> {
+  const image = repository.get(imageId);
+  if (image && image.usedIn.includes(usageId)) {
+    await repository.setUsedIn(imageId, image.usedIn.filter(id => id !== usageId));
   }
 }
 
@@ -229,10 +184,10 @@ export function filterImages(filter: MediaFilter): MediaImage[] {
 
 export function sortImages(images: MediaImage[], sort: MediaSort): MediaImage[] {
   const sorted = [...images];
-  
+
   sorted.sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sort.field) {
       case 'name':
         comparison = a.name.localeCompare(b.name);
@@ -247,10 +202,10 @@ export function sortImages(images: MediaImage[], sort: MediaSort): MediaImage[] 
         comparison = a.size - b.size;
         break;
     }
-    
+
     return sort.order === 'asc' ? comparison : -comparison;
   });
-  
+
   return sorted;
 }
 
@@ -264,7 +219,7 @@ export function searchImages(
 
   const search = query.toLowerCase();
   const all = getAllImages();
-  
+
   return all
     .filter(
       img =>
@@ -294,15 +249,7 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 }
 
 export function getStorageUsage(): { used: number; limit: number; percentage: number } {
-  const images = getAllImages();
-  const used = images.reduce((total, img) => total + img.size, 0);
-  const limit = 5 * 1024 * 1024;
-  
-  return {
-    used,
-    limit,
-    percentage: (used / limit) * 100,
-  };
+  return repository.getStorageUsage();
 }
 
 export function formatFileSize(bytes: number): string {
@@ -326,7 +273,5 @@ export function getLocationLabel(location: MediaLocation): string {
 }
 
 export function reloadMediaLibrary(): void {
-  getStorageAdapter().reload();
-  initialized = false;
-  ensureInitialized();
+  repository.reload();
 }

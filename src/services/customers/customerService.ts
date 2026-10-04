@@ -1,3 +1,6 @@
+import type { OrderStatus } from '../../types/order';
+import { logActivity } from '../logs/logService';
+
 const CUSTOMERS_STORAGE_KEY = 'vyro_customers_repository';
 
 export interface Customer {
@@ -24,7 +27,7 @@ export interface CustomerOrder {
   id: string;
   date: string;
   total: number;
-  status: 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: OrderStatus;
 }
 
 export interface CustomerStorageData {
@@ -180,7 +183,13 @@ export function createCustomer(data: Omit<Customer, 'id' | 'orderCount' | 'total
   
   mockCustomers.push(customer);
   addCustomerToStorage(customer);
-  
+
+  logActivity({
+    type: 'customer-created',
+    entityId: customer.id,
+    detail: { name: `${customer.firstName} ${customer.lastName}`.trim() },
+  });
+
   return { success: true, customer };
 }
 
@@ -216,18 +225,24 @@ export function updateCustomer(
 
 export function deleteCustomer(id: string): { success: boolean; error?: string } {
   initializeMockCustomers();
-  
+
   const index = mockCustomers.findIndex(c => c.id === id);
   if (index === -1) {
     return { success: false, error: 'Customer not found' };
   }
-  
-  mockCustomers.splice(index, 1);
-  
+
+  const [removed] = mockCustomers.splice(index, 1);
+
   const data = getStorageData();
   data.customers = data.customers.filter(c => c.id !== id);
   setStorageData(data);
-  
+
+  logActivity({
+    type: 'customer-deleted',
+    entityId: removed.id,
+    detail: { name: `${removed.firstName} ${removed.lastName}`.trim() },
+  });
+
   return { success: true };
 }
 

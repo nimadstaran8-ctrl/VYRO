@@ -1,5 +1,6 @@
-import { lazy } from 'react';
+import { lazy, createElement } from 'react';
 import { ROUTES } from '../../constants/routes';
+import { ProtectedAdminRoute } from '../../components/layout/ProtectedAdminRoute';
 
 const Home = lazy(() => import('../../pages/system/Home').then(m => ({ default: m.Home })));
 const Shop = lazy(() => import('../../pages/shop/Shop').then(m => ({ default: m.Shop })));
@@ -21,6 +22,7 @@ const Terms = lazy(() => import('../../pages/info/Terms').then(m => ({ default: 
 const NotFound = lazy(() => import('../../pages/system/NotFound').then(m => ({ default: m.NotFound })));
 
 const AdminLayout = lazy(() => import('../../components/layout/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const AdminLogin = lazy(() => import('../../pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminDashboard = lazy(() => import('../../pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const AdminProducts = lazy(() => import('../../pages/admin/AdminProducts').then(m => ({ default: m.AdminProducts })));
 const AdminProductCreate = lazy(() => import('../../pages/admin/AdminProductCreate').then(m => ({ default: m.AdminProductCreate })));
@@ -33,11 +35,23 @@ const AdminCustomers = lazy(() => import('../../pages/admin/AdminCustomers').the
 const AdminCustomerDetail = lazy(() => import('../../pages/admin/AdminCustomerDetail').then(m => ({ default: m.AdminCustomerDetail })));
 const AdminHomepage = lazy(() => import('../../pages/admin/AdminHomepage').then(m => ({ default: m.AdminHomepage })));
 const AdminSettings = lazy(() => import('../../pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminLogs = lazy(() => import('../../pages/admin/AdminLogs').then(m => ({ default: m.AdminLogs })));
 
 export interface RouteConfig {
   path: string;
   Element: React.ComponentType;
   children?: RouteConfig[];
+}
+
+/** Client-side auth gate for admin pages (UI-level only, not a security boundary). */
+function guard(Page: React.ComponentType): React.ComponentType {
+  return function GuardedPage() {
+    return createElement(
+      ProtectedAdminRoute,
+      null,
+      createElement(Page)
+    );
+  };
 }
 
 export const routeConfig: RouteConfig[] = [
@@ -58,22 +72,26 @@ export const routeConfig: RouteConfig[] = [
   { path: ROUTES.RETURNS, Element: Returns },
   { path: ROUTES.PRIVACY, Element: Privacy },
   { path: ROUTES.TERMS, Element: Terms },
+  { path: ROUTES.ADMIN_LOGIN, Element: AdminLogin },
   {
     path: ROUTES.ADMIN,
     Element: AdminLayout,
     children: [
-      { path: '', Element: AdminDashboard },
-      { path: 'products', Element: AdminProducts },
-      { path: 'products/new', Element: AdminProductCreate },
-      { path: 'products/:id/edit', Element: AdminProductEdit },
-      { path: 'media', Element: AdminMediaLibrary },
-      { path: 'categories', Element: AdminCategories },
-      { path: 'orders', Element: AdminOrders },
-      { path: 'orders/:id', Element: AdminOrderDetail },
-      { path: 'customers', Element: AdminCustomers },
-      { path: 'customers/:id', Element: AdminCustomerDetail },
-      { path: 'homepage', Element: AdminHomepage },
-      { path: 'settings', Element: AdminSettings },
+      { path: '', Element: guard(AdminDashboard) },
+      { path: 'products', Element: guard(AdminProducts) },
+      { path: 'products/new', Element: guard(AdminProductCreate) },
+      { path: 'products/:id/edit', Element: guard(AdminProductEdit) },
+      { path: 'media', Element: guard(AdminMediaLibrary) },
+      { path: 'categories', Element: guard(AdminCategories) },
+      { path: 'orders', Element: guard(AdminOrders) },
+      { path: 'orders/:id', Element: guard(AdminOrderDetail) },
+      { path: 'users', Element: guard(AdminCustomers) },
+      { path: 'users/:id', Element: guard(AdminCustomerDetail) },
+      { path: 'customers', Element: guard(AdminCustomers) },
+      { path: 'customers/:id', Element: guard(AdminCustomerDetail) },
+      { path: 'homepage', Element: guard(AdminHomepage) },
+      { path: 'settings', Element: guard(AdminSettings) },
+      { path: 'logs', Element: guard(AdminLogs) },
     ],
   },
   { path: ROUTES.NOT_FOUND, Element: NotFound },
