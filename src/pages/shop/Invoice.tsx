@@ -235,11 +235,11 @@ export function Invoice() {
                 {content.paymentMethod}: <span className="font-medium text-primary">{content.cardToCard}</span>
               </span>
               {paymentSettings.cardNumber && (
-                <span className="text-text-secondary" dir="ltr">
+                <span className="text-text-secondary">
                   {content.paidTo}:{' '}
-                  <span className="font-mono font-medium text-primary">
+                  <bdi dir="ltr" className="font-mono font-medium text-primary">
                     {paymentSettings.cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ')}
-                  </span>
+                  </bdi>
                 </span>
               )}
             </div>
