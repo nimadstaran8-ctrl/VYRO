@@ -26,26 +26,44 @@ export interface AdminSession {
 }
 
 function readSession(): AdminSession | null {
+  // Snapshot identity must stay stable for useSyncExternalStore consumers,
+  // so the parsed session is cached and rebuilt only when the raw value changes.
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw === cachedRaw) return cachedSession;
+    if (!raw) {
+      cachedRaw = null;
+      cachedSession = null;
+      return null;
+    }
     const parsed = JSON.parse(raw) as AdminSession;
-    return parsed.username ? parsed : null;
+    cachedSession = parsed.username ? parsed : null;
+    cachedRaw = raw;
+    return cachedSession;
   } catch {
+    cachedRaw = null;
+    cachedSession = null;
     return null;
   }
 }
 
+let cachedRaw: string | null = null;
+let cachedSession: AdminSession | null = null;
+
 function writeSession(session: AdminSession | null): void {
   try {
+    // localStorage (not sessionStorage) so the owner stays signed in across
+    // browser restarts — this is what keeps the admin entry button theirs.
     if (session) {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } else {
-      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
     }
   } catch {
     // Storage unavailable (private mode etc.) — session simply won't persist.
   }
+  cachedRaw = null;
+  cachedSession = null;
 }
 
 const listeners = new Set<(session: AdminSession | null) => void>();

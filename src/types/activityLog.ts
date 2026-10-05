@@ -19,7 +19,11 @@ export type ActivityLogType =
   | 'media-deleted'
   | 'settings-updated'
   | 'admin-login'
-  | 'admin-logout';
+  | 'admin-logout'
+  | 'user-registered'
+  | 'user-login'
+  | 'user-logout'
+  | 'user-password-reset';
 
 export type ActivityLogSettingsSection =
   | 'store'

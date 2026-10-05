@@ -1,6 +1,7 @@
 import { lazy, createElement } from 'react';
 import { ROUTES } from '../../constants/routes';
 import { ProtectedAdminRoute } from '../../components/layout/ProtectedAdminRoute';
+import { RequireAuth } from '../../components/layout/RequireAuth';
 
 const Home = lazy(() => import('../../pages/system/Home').then(m => ({ default: m.Home })));
 const Shop = lazy(() => import('../../pages/shop/Shop').then(m => ({ default: m.Shop })));
@@ -21,6 +22,9 @@ const Returns = lazy(() => import('../../pages/info/Returns').then(m => ({ defau
 const Privacy = lazy(() => import('../../pages/info/Privacy').then(m => ({ default: m.Privacy })));
 const Terms = lazy(() => import('../../pages/info/Terms').then(m => ({ default: m.Terms })));
 const NotFound = lazy(() => import('../../pages/system/NotFound').then(m => ({ default: m.NotFound })));
+const Login = lazy(() => import('../../pages/account/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('../../pages/account/Register').then(m => ({ default: m.Register })));
+const ForgotPassword = lazy(() => import('../../pages/account/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 
 const AdminLayout = lazy(() => import('../../components/layout/AdminLayout').then(m => ({ default: m.AdminLayout })));
 const AdminLogin = lazy(() => import('../../pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
@@ -55,25 +59,43 @@ function guard(Page: React.ComponentType): React.ComponentType {
   };
 }
 
+/**
+ * Sign-in gate for storefront pages: visitors must register and log in to
+ * browse. The admin (store owner) is exempt while signed into the admin
+ * panel in the same browser session — see RequireAuth.
+ */
+function userGuard(Page: React.ComponentType): React.ComponentType {
+  return function UserGuardedPage() {
+    return createElement(
+      RequireAuth,
+      null,
+      createElement(Page)
+    );
+  };
+}
+
 export const routeConfig: RouteConfig[] = [
-  { path: ROUTES.HOME, Element: Home },
-  { path: ROUTES.SHOP, Element: Shop },
-  { path: ROUTES.HATS, Element: Hats },
-  { path: ROUTES.GLASSES, Element: Glasses },
-  { path: ROUTES.PRODUCT, Element: ProductDetails },
-  { path: ROUTES.STYLE_FINDER, Element: StyleFinder },
-  { path: ROUTES.WISHLIST, Element: Wishlist },
-  { path: ROUTES.CART, Element: Cart },
-  { path: ROUTES.CHECKOUT, Element: Checkout },
-  { path: ROUTES.INVOICE, Element: Invoice },
-  { path: ROUTES.SEARCH, Element: SearchResults },
-  { path: ROUTES.ABOUT, Element: About },
-  { path: ROUTES.CONTACT, Element: Contact },
-  { path: ROUTES.FAQ, Element: FAQ },
-  { path: ROUTES.SHIPPING, Element: Shipping },
-  { path: ROUTES.RETURNS, Element: Returns },
-  { path: ROUTES.PRIVACY, Element: Privacy },
-  { path: ROUTES.TERMS, Element: Terms },
+  { path: ROUTES.HOME, Element: userGuard(Home) },
+  { path: ROUTES.SHOP, Element: userGuard(Shop) },
+  { path: ROUTES.HATS, Element: userGuard(Hats) },
+  { path: ROUTES.GLASSES, Element: userGuard(Glasses) },
+  { path: ROUTES.PRODUCT, Element: userGuard(ProductDetails) },
+  { path: ROUTES.STYLE_FINDER, Element: userGuard(StyleFinder) },
+  { path: ROUTES.WISHLIST, Element: userGuard(Wishlist) },
+  { path: ROUTES.CART, Element: userGuard(Cart) },
+  { path: ROUTES.CHECKOUT, Element: userGuard(Checkout) },
+  { path: ROUTES.INVOICE, Element: userGuard(Invoice) },
+  { path: ROUTES.SEARCH, Element: userGuard(SearchResults) },
+  { path: ROUTES.ABOUT, Element: userGuard(About) },
+  { path: ROUTES.CONTACT, Element: userGuard(Contact) },
+  { path: ROUTES.FAQ, Element: userGuard(FAQ) },
+  { path: ROUTES.SHIPPING, Element: userGuard(Shipping) },
+  { path: ROUTES.RETURNS, Element: userGuard(Returns) },
+  { path: ROUTES.PRIVACY, Element: userGuard(Privacy) },
+  { path: ROUTES.TERMS, Element: userGuard(Terms) },
+  { path: ROUTES.LOGIN, Element: Login },
+  { path: ROUTES.REGISTER, Element: Register },
+  { path: ROUTES.FORGOT_PASSWORD, Element: ForgotPassword },
   { path: ROUTES.ADMIN_LOGIN, Element: AdminLogin },
   {
     path: ROUTES.ADMIN,
@@ -96,5 +118,5 @@ export const routeConfig: RouteConfig[] = [
       { path: 'logs', Element: guard(AdminLogs) },
     ],
   },
-  { path: ROUTES.NOT_FOUND, Element: NotFound },
+  { path: ROUTES.NOT_FOUND, Element: userGuard(NotFound) },
 ];

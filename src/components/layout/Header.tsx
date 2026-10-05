@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search, Heart, ShoppingBag, LayoutDashboard } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Search, Heart, ShoppingBag, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
@@ -8,6 +8,9 @@ import { useCartStore } from '../../stores/cartStore';
 import { useWishlistStore } from '../../stores/wishlistStore';
 import { SearchModal } from '../search/SearchModal';
 import { LanguageSwitcher } from '../../features/language/components/LanguageSwitcher';
+import { useUserSession } from '../../features/account/hooks/useUserSession';
+import { logoutUser } from '../../features/account/services/userAuth';
+import { useAdminSession } from '../../features/admin/hooks/useAdminSession';
 import { useLanguageStore } from '../../stores/languageStore';
 import { cn } from '../../lib/utils';
 import { t } from '../../lib/i18n';
@@ -26,7 +29,10 @@ export function Header() {
   const { toggleCart, getTotalItems } = useCartStore();
   const { items: wishlistItems } = useWishlistStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const language = useLanguageStore((state) => state.language);
+  const session = useUserSession();
+  const adminSession = useAdminSession();
 
   useLockBodyScroll(mobileMenuOpen);
 
@@ -103,7 +109,9 @@ export function Header() {
             </Link>
             <button
               type="button"
-              onClick={toggleCart}
+              onClick={() => {
+                toggleCart();
+              }}
               className="relative rounded-full p-2 text-primary hover:bg-black/5"
               aria-label={t('nav.cart', language)}
             >
@@ -114,14 +122,48 @@ export function Header() {
                 </span>
               )}
             </button>
-            <Link
-              to="/admin"
-              className="rounded-full p-2 text-primary hover:bg-black/5"
-              aria-label={t('nav.admin', language)}
-              title={t('nav.admin', language)}
-            >
-              <LayoutDashboard size={20} />
-            </Link>
+            {adminSession && (
+              <Link
+                to="/admin"
+                className="rounded-full p-2 text-primary hover:bg-black/5"
+                aria-label={t('nav.admin', language)}
+                title={t('nav.admin', language)}
+              >
+                <LayoutDashboard size={20} />
+              </Link>
+            )}
+            {session ? (
+              <div className="flex items-center gap-1">
+                <span
+                  className="hidden max-w-[10rem] items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-primary sm:inline-flex"
+                  title={session.username}
+                >
+                  <User size={16} />
+                  <span className="truncate">{session.username}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logoutUser();
+                    navigate('/');
+                  }}
+                  className="rounded-full p-2 text-primary hover:bg-black/5"
+                  aria-label={t('nav.logout', language)}
+                  title={t('nav.logout', language)}
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-full p-2 text-primary hover:bg-black/5"
+                aria-label={t('nav.login', language)}
+                title={t('nav.login', language)}
+              >
+                <User size={20} />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -179,14 +221,39 @@ export function Header() {
                     <Heart size={20} />
                     {t('nav.wishlist', language)}
                   </Link>
-                  <Link
-                    to="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex flex-col items-center gap-1 text-sm text-primary"
-                  >
-                    <LayoutDashboard size={20} />
-                    {t('nav.admin', language)}
-                  </Link>
+                  {adminSession && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex flex-col items-center gap-1 text-sm text-primary"
+                    >
+                      <LayoutDashboard size={20} />
+                      {t('nav.admin', language)}
+                    </Link>
+                  )}
+                  {session ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logoutUser();
+                        navigate('/');
+                      }}
+                      className="flex flex-col items-center gap-1 text-sm text-primary"
+                    >
+                      <LogOut size={20} />
+                      {t('nav.logout', language)}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex flex-col items-center gap-1 text-sm text-primary"
+                    >
+                      <User size={20} />
+                      {t('nav.login', language)}
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

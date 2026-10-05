@@ -10,6 +10,7 @@ import {
 
 describe('Admin Auth (frontend prototype)', () => {
   beforeEach(() => {
+    localStorage.clear();
     sessionStorage.clear();
   });
 

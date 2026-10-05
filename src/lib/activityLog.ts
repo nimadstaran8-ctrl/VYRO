@@ -18,6 +18,10 @@ export const ACTIVITY_LOG_TYPES: ActivityLogType[] = [
   'settings-updated',
   'admin-login',
   'admin-logout',
+  'user-registered',
+  'user-login',
+  'user-logout',
+  'user-password-reset',
 ];
 
 export function getActivityLogTypeLabel(type: ActivityLogType, language: Language): string {
@@ -36,6 +40,10 @@ export function getActivityLogTypeLabel(type: ActivityLogType, language: Languag
     'settings-updated': language === 'fa' ? 'تغییر تنظیمات' : 'Settings Changed',
     'admin-login': language === 'fa' ? 'ورود مدیر' : 'Admin Login',
     'admin-logout': language === 'fa' ? 'خروج مدیر' : 'Admin Logout',
+    'user-registered': language === 'fa' ? 'ثبت‌نام کاربر' : 'User Registered',
+    'user-login': language === 'fa' ? 'ورود کاربر' : 'User Login',
+    'user-logout': language === 'fa' ? 'خروج کاربر' : 'User Logout',
+    'user-password-reset': language === 'fa' ? 'بازیابی رمز عبور' : 'Password Reset',
   };
   return labels[type];
 }
@@ -56,6 +64,10 @@ export function getActivityLogTypeColor(type: ActivityLogType): string {
     'settings-updated': 'bg-gray-100 text-gray-700',
     'admin-login': 'bg-violet-100 text-violet-800',
     'admin-logout': 'bg-gray-100 text-gray-700',
+    'user-registered': 'bg-cyan-100 text-cyan-800',
+    'user-login': 'bg-violet-100 text-violet-800',
+    'user-logout': 'bg-gray-100 text-gray-700',
+    'user-password-reset': 'bg-yellow-100 text-yellow-800',
   };
   return colors[type];
 }
@@ -97,7 +109,11 @@ export function getActivityLogDescription(entry: ActivityLogEntry, language: Lan
       return getSettingsSectionLabel(detail.section, language);
     case 'admin-login':
     case 'admin-logout':
-      return detail.actor ?? '';
+    case 'user-login':
+    case 'user-logout':
+    case 'user-registered':
+    case 'user-password-reset':
+      return detail.actor ?? detail.name ?? '';
     default:
       return detail.name ?? '';
   }

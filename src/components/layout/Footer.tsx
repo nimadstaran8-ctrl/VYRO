@@ -14,7 +14,6 @@ const footerLinks = (lang: string) => [
   { label: t('nav.returns', lang as 'fa' | 'en'), href: '/returns' },
   { label: t('nav.privacy', lang as 'fa' | 'en'), href: '/privacy' },
   { label: t('nav.terms', lang as 'fa' | 'en'), href: '/terms' },
-  { label: t('nav.admin', lang as 'fa' | 'en'), href: '/admin' },
 ];
 
 export function Footer() {
