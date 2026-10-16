@@ -6,6 +6,7 @@ import { CartDrawer } from '../../features/cart/components/CartDrawer';
 
 export function Layout() {
   const { pathname } = useLocation();
+  const isAdminRoute = pathname.startsWith('/admin');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -13,12 +14,12 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Header />
-      <main className="flex-1 pt-20">
+      {!isAdminRoute && <Header />}
+      <main className={isAdminRoute ? 'flex-1' : 'flex-1 pt-20'}>
         <Outlet />
       </main>
-      <Footer />
-      <CartDrawer />
+      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <CartDrawer />}
     </div>
   );
 }

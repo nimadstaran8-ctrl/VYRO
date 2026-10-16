@@ -1,4 +1,5 @@
 import { logActivity } from '../logs/logService';
+import { SOCIAL_LINKS } from '../../constants/socialLinks';
 
 const SETTINGS_STORAGE_KEY = 'vyro_settings';
 
@@ -49,12 +50,23 @@ export interface PaymentSettings {
   cardHolder: string;
 }
 
+/**
+ * Social media URLs shown in the storefront footer. Stored in settings so
+ * the store owner can update them from the admin panel without code changes.
+ */
+export interface SocialSettings {
+  instagram: string;
+  tiktok: string;
+  telegram: string;
+}
+
 export interface Settings {
   store: StoreSettings;
   language: LanguageSettings;
   currency: CurrencySettings;
   homepage: HomepageSettings;
   payment: PaymentSettings;
+  social: SocialSettings;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -91,6 +103,7 @@ const DEFAULT_SETTINGS: Settings = {
     cardNumber: '',
     cardHolder: '',
   },
+  social: { ...SOCIAL_LINKS },
 };
 
 function getSettingsData(): Settings {
@@ -104,9 +117,11 @@ function getSettingsData(): Settings {
         currency: { ...DEFAULT_SETTINGS.currency, ...parsed.currency },
         homepage: { ...DEFAULT_SETTINGS.homepage, ...parsed.homepage },
         payment: { ...DEFAULT_SETTINGS.payment, ...parsed.payment },
+        social: { ...DEFAULT_SETTINGS.social, ...parsed.social },
       };
     }
   } catch {
+    console.warn('[settings] Failed to parse stored settings; using defaults.');
   }
   return { ...DEFAULT_SETTINGS };
 }
@@ -114,7 +129,10 @@ function getSettingsData(): Settings {
 function setSettingsData(settings: Settings): void {
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-  } catch {
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to write settings to storage'
+    );
   }
 }
 
@@ -203,6 +221,34 @@ export function updatePaymentSettings(updates: Partial<PaymentSettings>): { succ
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save payment settings' };
+  }
+}
+
+export function getSocialSettings(): SocialSettings {
+  return getSettingsData().social;
+}
+
+export function updateSocialSettings(updates: Partial<SocialSettings>): { success: boolean; error?: string } {
+  try {
+    const settings = getSettingsData();
+    settings.social = { ...settings.social, ...updates };
+    setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'social' } });
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to save social settings' };
+  }
+}
+
+export function resetSocialSettings(): { success: boolean; error?: string } {
+  try {
+    const settings = getSettingsData();
+    settings.social = { ...SOCIAL_LINKS };
+    setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'social', name: 'reset' } });
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to reset social settings' };
   }
 }
 

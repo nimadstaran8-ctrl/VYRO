@@ -36,6 +36,7 @@ export const ROUTES = {
   ADMIN_CUSTOMER_DETAIL: '/admin/customers/:id',
   ADMIN_HOMEPAGE: '/admin/homepage',
   ADMIN_SETTINGS: '/admin/settings',
+  ADMIN_FOOTER_SOCIAL: '/admin/footer-social',
   ADMIN_LOGS: '/admin/logs',
 } as const;
 

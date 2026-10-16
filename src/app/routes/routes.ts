@@ -40,6 +40,7 @@ const AdminCustomers = lazy(() => import('../../pages/admin/AdminCustomers').the
 const AdminCustomerDetail = lazy(() => import('../../pages/admin/AdminCustomerDetail').then(m => ({ default: m.AdminCustomerDetail })));
 const AdminHomepage = lazy(() => import('../../pages/admin/AdminHomepage').then(m => ({ default: m.AdminHomepage })));
 const AdminSettings = lazy(() => import('../../pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminFooterSocial = lazy(() => import('../../pages/admin/AdminFooterSocial').then(m => ({ default: m.AdminFooterSocial })));
 const AdminLogs = lazy(() => import('../../pages/admin/AdminLogs').then(m => ({ default: m.AdminLogs })));
 
 export interface RouteConfig {
@@ -115,6 +116,7 @@ export const routeConfig: RouteConfig[] = [
       { path: 'customers/:id', Element: guard(AdminCustomerDetail) },
       { path: 'homepage', Element: guard(AdminHomepage) },
       { path: 'settings', Element: guard(AdminSettings) },
+      { path: 'footer-social', Element: guard(AdminFooterSocial) },
       { path: 'logs', Element: guard(AdminLogs) },
     ],
   },

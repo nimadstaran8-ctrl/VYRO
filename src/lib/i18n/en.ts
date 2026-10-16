@@ -9,6 +9,7 @@ export const en = {
     media: 'Media Library',
     homepage: 'Homepage',
     settings: 'Settings',
+    footerSocial: 'Footer & Social Media',
     logs: 'Activity Logs',
   },
   common: {
@@ -32,7 +33,6 @@ export const en = {
     remove: 'Remove',
     required: 'Required',
     language: 'Change Language',
-    subscribe: 'Subscribe',
     viewAll: 'View All',
     browseAll: 'Browse All Products',
     startShopping: 'Start Shopping',
@@ -59,7 +59,6 @@ export const en = {
     account: 'Account',
     quickLinks: 'Quick Links',
     support: 'Support',
-    newsletter: 'Newsletter',
     about: 'About Us',
     contact: 'Contact',
     faq: 'FAQ',

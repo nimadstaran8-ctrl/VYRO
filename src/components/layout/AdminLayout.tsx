@@ -14,6 +14,7 @@ import {
   Image,
   Home,
   Settings,
+  Share2,
   ScrollText,
   ChevronRight,
   Menu,
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { path: ROUTES.ADMIN_MEDIA, labelKey: 'adminNav.media', icon: <Image className="h-5 w-5" /> },
   { path: ROUTES.ADMIN_HOMEPAGE, labelKey: 'adminNav.homepage', icon: <Home className="h-5 w-5" /> },
   { path: ROUTES.ADMIN_SETTINGS, labelKey: 'adminNav.settings', icon: <Settings className="h-5 w-5" /> },
+  { path: ROUTES.ADMIN_FOOTER_SOCIAL, labelKey: 'adminNav.footerSocial', icon: <Share2 className="h-5 w-5" /> },
   { path: ROUTES.ADMIN_LOGS, labelKey: 'adminNav.logs', icon: <ScrollText className="h-5 w-5" /> },
 ];
 

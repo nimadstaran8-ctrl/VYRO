@@ -9,6 +9,7 @@ export const fa = {
     media: 'کتابخانه تصاویر',
     homepage: 'صفحه اصلی',
     settings: 'تنظیمات',
+    footerSocial: 'فوتر و شبکه‌های اجتماعی',
     logs: 'لاگ فعالیت‌ها',
   },
   common: {
@@ -32,7 +33,6 @@ export const fa = {
     remove: 'حذف',
     required: 'الزامی',
     language: 'تغییر زبان',
-    subscribe: 'عضویت',
     viewAll: 'مشاهده همه',
     browseAll: 'مشاهده همه محصولات',
     startShopping: 'شروع خرید',
@@ -59,7 +59,6 @@ export const fa = {
     account: 'حساب کاربری',
     quickLinks: 'دسترسی سریع',
     support: 'پشتیبانی',
-    newsletter: 'خبرنامه',
     about: 'درباره ما',
     contact: 'تماس',
     faq: 'سوالات متداول',

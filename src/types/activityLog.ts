@@ -31,6 +31,7 @@ export type ActivityLogSettingsSection =
   | 'currency'
   | 'homepage'
   | 'payment'
+  | 'social'
   | 'reset';
 
 export interface ActivityLogDetail {
