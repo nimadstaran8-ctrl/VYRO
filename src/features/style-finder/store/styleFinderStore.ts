@@ -1,42 +1,48 @@
 import { create } from 'zustand';
 import { getProducts } from '../../../services/catalog/productService';
+import { getAIStylistSettings } from '../../../services/settings/settingsService';
+import {
+  generateRecommendations,
+  getBudgetRange,
+} from '../services/recommendationEngine';
+import type {
+  Budget,
+  Occasion,
+  ShoppingFor,
+  StyleFinderAnswers,
+  ScoredRecommendation,
+  OutfitSet,
+} from '../types';
 import type { Color, Style } from '../../../types';
-
-export type ShoppingFor = 'hat' | 'glasses' | 'both';
-export type Budget = 'under-30' | '30-60' | '60-100' | '100-plus';
-
-interface StyleFinderAnswers {
-  style?: Style;
-  shoppingFor?: ShoppingFor;
-  colors: Color[];
-  budget?: Budget;
-}
 
 interface StyleFinderState {
   answers: StyleFinderAnswers;
   step: number;
-  results: string[];
+  results: ScoredRecommendation[];
+  outfits: OutfitSet[];
+  relaxationHints: string[];
   setStyle: (style: Style) => void;
   setShoppingFor: (value: ShoppingFor) => void;
   toggleColor: (color: Color) => void;
   setBudget: (budget: Budget) => void;
+  setOccasion: (occasion: Occasion) => void;
   nextStep: () => void;
   prevStep: () => void;
   reset: () => void;
-  findMatches: () => string[];
+  findMatches: () => ScoredRecommendation[];
+  goToStep: (step: number) => void;
 }
 
-const budgetRanges: Record<Budget, [number, number]> = {
-  'under-30': [0, 30],
-  '30-60': [30, 60],
-  '60-100': [60, 100],
-  '100-plus': [100, 1000],
+const initialAnswers: StyleFinderAnswers = {
+  colors: [],
 };
 
 export const useStyleFinderStore = create<StyleFinderState>((set, get) => ({
-  answers: { colors: [] },
+  answers: { ...initialAnswers },
   step: 0,
   results: [],
+  outfits: [],
+  relaxationHints: [],
 
   setStyle: (style) => set((state) => ({ answers: { ...state.answers, style } })),
   setShoppingFor: (shoppingFor) => set((state) => ({ answers: { ...state.answers, shoppingFor } })),
@@ -50,43 +56,36 @@ export const useStyleFinderStore = create<StyleFinderState>((set, get) => ({
       },
     })),
   setBudget: (budget) => set((state) => ({ answers: { ...state.answers, budget } })),
+  setOccasion: (occasion) => set((state) => ({ answers: { ...state.answers, occasion } })),
 
-  nextStep: () => set((state) => ({ step: Math.min(state.step + 1, 4) })),
+  nextStep: () => set((state) => ({ step: Math.min(state.step + 1, 5) })),
   prevStep: () => set((state) => ({ step: Math.max(state.step - 1, 0) })),
+  goToStep: (step) => set(() => ({ step: Math.max(0, Math.min(step, 5)) })),
 
-  reset: () => set({ answers: { colors: [] }, step: 0, results: [] }),
+  reset: () =>
+    set({
+      answers: { ...initialAnswers },
+      step: 0,
+      results: [],
+      outfits: [],
+      relaxationHints: [],
+    }),
 
   findMatches: () => {
     const { answers } = get();
     const products = getProducts();
-    const scored = products
-      .filter((p) => {
-        if (answers.shoppingFor && answers.shoppingFor !== 'both') {
-          if (p.category !== answers.shoppingFor) return false;
-        }
-        if (answers.budget) {
-          const [min, max] = budgetRanges[answers.budget];
-          if (p.priceUSD < min || p.priceUSD > max) return false;
-        }
-        return true;
-      })
-      .map((p) => {
-        let score = 0;
-        if (answers.style && p.style === answers.style) score += 40;
-        if (answers.colors.length > 0) {
-          const matchingColors = p.colors.filter((c) => answers.colors.includes(c)).length;
-          score += (matchingColors / Math.max(p.colors.length, 1)) * 30;
-        }
-        if (p.rating >= 4.8) score += 15;
-        if (p.isBestSeller) score += 10;
-        if (p.featured) score += 5;
-        return { productId: p.id, score: Math.min(100, Math.round(score)) };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+    const settings = getAIStylistSettings();
+    const result = generateRecommendations(products, answers, settings);
 
-    const resultIds = scored.map((s) => s.productId);
-    set({ results: resultIds });
-    return resultIds;
+    set({
+      results: result.items,
+      outfits: result.outfits,
+      relaxationHints: result.relaxationHints,
+    });
+
+    return result.items;
   },
 }));
+
+export type { Budget, Occasion, ShoppingFor };
+export { getBudgetRange };

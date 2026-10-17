@@ -83,6 +83,7 @@ function getSettingsSectionLabel(
     homepage: language === 'fa' ? 'صفحه اصلی' : 'Homepage',
     payment: language === 'fa' ? 'پرداخت (شماره کارت)' : 'Payment (Card Number)',
     social: language === 'fa' ? 'شبکه‌های اجتماعی' : 'Social Media',
+    'ai-stylist': language === 'fa' ? 'استایلیست هوشمند' : 'AI Stylist',
     reset: language === 'fa' ? 'بازنشانی تنظیمات' : 'Settings Reset',
   };
   return labels[section ?? 'store'];

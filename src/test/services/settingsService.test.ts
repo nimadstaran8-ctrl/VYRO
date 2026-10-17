@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { DEFAULT_AI_STYLIST_SETTINGS } from '../../features/style-finder/types';
 
 const SETTINGS_STORAGE_KEY = 'vyro_settings';
 
@@ -136,6 +137,34 @@ describe('Settings Service - Social Links', () => {
       expect(social.instagram).toBe('https://www.instagram.com/nima_mk7338/');
       expect(social.tiktok).toBe('https://www.tiktok.com/@nima53102');
       expect(social.telegram).toBe('https://t.me/FreakConfig');
+    });
+  });
+
+  describe('AI Stylist settings', () => {
+    it('returns default AI stylist settings', async () => {
+      const service = await import('../../services/settings/settingsService');
+      const aiStylist = service.getAIStylistSettings();
+      expect(aiStylist.enabled).toBe(DEFAULT_AI_STYLIST_SETTINGS.enabled);
+      expect(aiStylist.requireStock).toBe(DEFAULT_AI_STYLIST_SETTINGS.requireStock);
+      expect(aiStylist.maxRecommendations).toBe(DEFAULT_AI_STYLIST_SETTINGS.maxRecommendations);
+    });
+
+    it('persists AI stylist settings', async () => {
+      const service = await import('../../services/settings/settingsService');
+      const result = service.updateAIStylistSettings({ enabled: false, requireStock: true });
+      expect(result.success).toBe(true);
+
+      const aiStylist = service.getAIStylistSettings();
+      expect(aiStylist.enabled).toBe(false);
+      expect(aiStylist.requireStock).toBe(true);
+    });
+
+    it('merges weight updates without resetting other weights', async () => {
+      const service = await import('../../services/settings/settingsService');
+      service.updateAIStylistSettings({ weights: { styleMatch: 50 } });
+      const aiStylist = service.getAIStylistSettings();
+      expect(aiStylist.weights.styleMatch).toBe(50);
+      expect(aiStylist.weights.colorMatch).toBe(DEFAULT_AI_STYLIST_SETTINGS.weights.colorMatch);
     });
   });
 });

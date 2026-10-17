@@ -1,5 +1,7 @@
 import { logActivity } from '../logs/logService';
 import { SOCIAL_LINKS } from '../../constants/socialLinks';
+import type { AIStylistSettings } from '../../features/style-finder/types';
+import { DEFAULT_AI_STYLIST_SETTINGS } from '../../features/style-finder/types';
 
 const SETTINGS_STORAGE_KEY = 'vyro_settings';
 
@@ -67,6 +69,7 @@ export interface Settings {
   homepage: HomepageSettings;
   payment: PaymentSettings;
   social: SocialSettings;
+  aiStylist: AIStylistSettings;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -104,6 +107,7 @@ const DEFAULT_SETTINGS: Settings = {
     cardHolder: '',
   },
   social: { ...SOCIAL_LINKS },
+  aiStylist: { ...DEFAULT_AI_STYLIST_SETTINGS },
 };
 
 function getSettingsData(): Settings {
@@ -118,6 +122,7 @@ function getSettingsData(): Settings {
         homepage: { ...DEFAULT_SETTINGS.homepage, ...parsed.homepage },
         payment: { ...DEFAULT_SETTINGS.payment, ...parsed.payment },
         social: { ...DEFAULT_SETTINGS.social, ...parsed.social },
+        aiStylist: { ...DEFAULT_SETTINGS.aiStylist, ...parsed.aiStylist },
       };
     }
   } catch {
@@ -237,6 +242,30 @@ export function updateSocialSettings(updates: Partial<SocialSettings>): { succes
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save social settings' };
+  }
+}
+
+export function getAIStylistSettings(): AIStylistSettings {
+  return getSettingsData().aiStylist;
+}
+
+export function updateAIStylistSettings(
+  updates: Partial<Omit<AIStylistSettings, 'weights'>> & { weights?: Partial<AIStylistSettings['weights']> }
+): { success: boolean; error?: string } {
+  try {
+    const settings = getSettingsData();
+    settings.aiStylist = {
+      ...settings.aiStylist,
+      ...updates,
+      weights: updates.weights
+        ? { ...settings.aiStylist.weights, ...updates.weights }
+        : settings.aiStylist.weights,
+    };
+    setSettingsData(settings);
+    logActivity({ type: 'settings-updated', detail: { section: 'ai-stylist' } });
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to save AI stylist settings' };
   }
 }
 

@@ -32,6 +32,7 @@ export type ActivityLogSettingsSection =
   | 'homepage'
   | 'payment'
   | 'social'
+  | 'ai-stylist'
   | 'reset';
 
 export interface ActivityLogDetail {

@@ -1,84 +1,94 @@
-import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Sparkles, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStyleFinderStore } from '../store/styleFinderStore';
-import type { Budget, ShoppingFor } from '../store/styleFinderStore';
+import type { Budget, Occasion, ShoppingFor } from '../types';
 import { getProductById } from '../../../services/catalog/productService';
+import { getAIStylistSettings } from '../../../services/settings/settingsService';
 import { Button } from '../../../components/ui/Button';
-import { RecommendationCard } from '../../../components/product/RecommendationCard';
+import { AIStylistRecommendationCard } from './AIStylistRecommendationCard';
+import { OutfitSetCard } from './OutfitSetCard';
 import { useLanguageStore } from '../../../stores/languageStore';
 import { t } from '../../../lib/i18n';
+import { getRelaxationHintMessage } from '../services/recommendationEngine';
+import type { StyleFinderAnswers } from '../types';
+import { STYLES, COLORS } from '../../../constants/product';
 import type { Color, Style } from '../../../types';
 
-const styles = (lang: string): { value: Style; label: string }[] => [
-  { value: 'Street', label: lang === 'fa' ? 'خیابانی' : 'Street' },
-  { value: 'Minimal', label: lang === 'fa' ? 'مینیمال' : 'Minimal' },
-  { value: 'Classic', label: lang === 'fa' ? 'کلاسیک' : 'Classic' },
-  { value: 'Sport', label: lang === 'fa' ? 'ورزشی' : 'Sport' },
-  { value: 'Luxury', label: lang === 'fa' ? 'لوکس' : 'Luxury' },
-  { value: 'Casual', label: lang === 'fa' ? 'کژوال' : 'Casual' },
+const styleLabels = (lang: 'fa' | 'en'): Record<Style, string> => ({
+  Street: lang === 'fa' ? 'خیابانی' : 'Streetwear',
+  Minimal: lang === 'fa' ? 'مینیمال' : 'Minimal',
+  Classic: lang === 'fa' ? 'کلاسیک' : 'Classic',
+  Sport: lang === 'fa' ? 'ورزشی' : 'Sporty',
+  Luxury: lang === 'fa' ? 'لوکس' : 'Luxury',
+  Casual: lang === 'fa' ? 'کژوال' : 'Casual',
+});
+
+const shoppingForOptions = (lang: 'fa' | 'en'): { value: ShoppingFor; label: string }[] => [
+  { value: 'hat', label: t('styleFinder.hat', lang) },
+  { value: 'glasses', label: t('styleFinder.glasses', lang) },
+  { value: 'both', label: t('styleFinder.both', lang) },
 ];
 
-const shoppingForOptions = (lang: string): { value: ShoppingFor; label: string }[] => [
-  { value: 'hat', label: t('styleFinder.hat', lang as 'fa' | 'en') },
-  { value: 'glasses', label: t('styleFinder.glasses', lang as 'fa' | 'en') },
-  { value: 'both', label: t('styleFinder.both', lang as 'fa' | 'en') },
-];
+const colorLabels = (lang: 'fa' | 'en'): Record<Color, string> => ({
+  Black: lang === 'fa' ? 'مشکی' : 'Black',
+  White: lang === 'fa' ? 'سفید' : 'White',
+  Brown: lang === 'fa' ? 'قهوه‌ای' : 'Brown',
+  Beige: lang === 'fa' ? 'بژ' : 'Beige',
+  Green: lang === 'fa' ? 'سبز' : 'Green',
+  Blue: lang === 'fa' ? 'آبی' : 'Blue',
+  Gold: lang === 'fa' ? 'طلایی' : 'Gold',
+});
 
-const colors = (lang: string): { value: Color; label: string }[] => [
-  { value: 'Black', label: lang === 'fa' ? 'مشکی' : 'Black' },
-  { value: 'White', label: lang === 'fa' ? 'سفید' : 'White' },
-  { value: 'Brown', label: lang === 'fa' ? 'قهوه‌ای' : 'Brown' },
-  { value: 'Beige', label: lang === 'fa' ? 'بژ' : 'Beige' },
-  { value: 'Green', label: lang === 'fa' ? 'سبز' : 'Green' },
-  { value: 'Blue', label: lang === 'fa' ? 'آبی' : 'Blue' },
-];
-
-const budgets = (lang: string): { value: Budget; label: string }[] => [
+const budgets = (lang: 'fa' | 'en'): { value: Budget; label: string }[] => [
   { value: 'under-30', label: lang === 'fa' ? 'زیر ۳۰ دلار' : 'Under $30' },
   { value: '30-60', label: lang === 'fa' ? '۳۰ تا ۶۰ دلار' : '$30–$60' },
   { value: '60-100', label: lang === 'fa' ? '۶۰ تا ۱۰۰ دلار' : '$60–$100' },
   { value: '100-plus', label: lang === 'fa' ? 'بالای ۱۰۰ دلار' : '$100+' },
 ];
 
-const stepTitles = (lang: string) => [
-  t('styleFinder.yourStyle', lang as 'fa' | 'en'),
-  t('styleFinder.whatShoppingFor', lang as 'fa' | 'en'),
-  t('styleFinder.chooseColors', lang as 'fa' | 'en'),
-  t('styleFinder.yourBudget', lang as 'fa' | 'en'),
+const occasions = (lang: 'fa' | 'en'): { value: Occasion; label: string }[] => [
+  { value: 'everyday', label: lang === 'fa' ? 'روزمره' : 'Everyday' },
+  { value: 'travel', label: lang === 'fa' ? 'سفر' : 'Travel' },
+  { value: 'outdoor', label: lang === 'fa' ? 'فضای باز' : 'Outdoor' },
+  { value: 'special', label: lang === 'fa' ? 'مناسبت خاص' : 'Special Occasions' },
 ];
+
+const STEP_COUNT = 5;
 
 export function StyleFinder() {
   const {
     answers,
     step,
     results,
+    outfits,
+    relaxationHints,
     setStyle,
     setShoppingFor,
     toggleColor,
     setBudget,
+    setOccasion,
     nextStep,
     prevStep,
     reset,
     findMatches,
+    goToStep,
   } = useStyleFinderStore();
 
   const language = useLanguageStore((state) => state.language);
-  const currentStyles = styles(language);
-  const currentShoppingFor = shoppingForOptions(language);
-  const currentColors = colors(language);
-  const currentBudgets = budgets(language);
-  const currentStepTitles = stepTitles(language);
+  const aiSettings = getAIStylistSettings();
+
+  if (!aiSettings.enabled) {
+    return <DisabledState language={language} />;
+  }
 
   const handleNext = () => {
-    if (step === 3) {
+    if (step === STEP_COUNT - 1) {
       findMatches();
       nextStep();
     } else {
       nextStep();
     }
   };
-
-  const topMatch = results[0] ? getProductById(results[0]) : null;
 
   const handleReset = () => {
     reset();
@@ -87,33 +97,55 @@ export function StyleFinder() {
   const canProceed =
     (step === 0 && answers.style) ||
     (step === 1 && answers.shoppingFor) ||
-    (step === 2 && answers.colors.length > 0) ||
-    (step === 3 && answers.budget);
+    (step === 2) ||
+    (step === 3) ||
+    (step === 4 && answers.budget);
+
+  const stepTitles = [
+    t('aiStylist.yourStyle', language),
+    t('aiStylist.whatShoppingFor', language),
+    t('aiStylist.chooseColors', language),
+    t('aiStylist.chooseOccasion', language),
+    t('aiStylist.yourBudget', language),
+  ];
+
+  const visibleStyles = STYLES.filter((s) => aiSettings.enabledStyles.includes(s.value));
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm md:p-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex gap-1">
-          {[0, 1, 2, 3].map((i) => (
-            <div
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl shadow-cyan-900/10 md:p-10">
+      <div className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -start-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+
+      <div className="relative mb-8 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {Array.from({ length: STEP_COUNT }).map((_, i) => (
+            <button
               key={i}
-              className={`h-1.5 w-8 rounded-full transition-colors ${i <= step ? 'bg-primary' : 'bg-border'}`}
+              type="button"
+              onClick={() => step > i && goToStep(i)}
+              disabled={step <= i}
+              className={`h-1.5 rounded-full transition-all ${
+                i <= step
+                  ? 'w-10 bg-cyan-400'
+                  : 'w-6 bg-white/10'
+              } ${step > i ? 'cursor-pointer hover:bg-cyan-300' : ''}`}
+              aria-label={`${t('common.step', language)} ${i + 1}`}
             />
           ))}
         </div>
-        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">
-          {t('common.step', language)} {step + 1} {t('common.of', language)} 4
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+          {t('common.step', language)} {step + 1} {t('common.of', language)} {STEP_COUNT}
         </span>
       </div>
 
       <AnimatePresence mode="wait">
         {step === 0 && (
-          <Step key="step0" title={currentStepTitles[0]}>
+          <Step key="step0" title={stepTitles[0]} subtitle={t('aiStylist.styleSubtitle', language)}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {currentStyles.map((s) => (
+              {visibleStyles.map((s) => (
                 <OptionCard
                   key={s.value}
-                  label={s.label}
+                  label={styleLabels(language)[s.value]}
                   selected={answers.style === s.value}
                   onClick={() => setStyle(s.value)}
                 />
@@ -123,9 +155,9 @@ export function StyleFinder() {
         )}
 
         {step === 1 && (
-          <Step key="step1" title={currentStepTitles[1]}>
+          <Step key="step1" title={stepTitles[1]} subtitle={t('aiStylist.shoppingForSubtitle', language)}>
             <div className="grid grid-cols-3 gap-3">
-              {currentShoppingFor.map((opt) => (
+              {shoppingForOptions(language).map((opt) => (
                 <OptionCard
                   key={opt.value}
                   label={opt.label}
@@ -138,13 +170,12 @@ export function StyleFinder() {
         )}
 
         {step === 2 && (
-          <Step key="step2" title={currentStepTitles[2]}>
-            <p className="mb-4 text-sm text-text-secondary">{t('styleFinder.selectOneOrMore', language)}</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {currentColors.map((c) => (
+          <Step key="step2" title={stepTitles[2]} subtitle={t('aiStylist.colorsSubtitle', language)}>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {COLORS.map((c) => (
                 <OptionCard
                   key={c.value}
-                  label={c.label}
+                  label={colorLabels(language)[c.value]}
                   selected={answers.colors.includes(c.value)}
                   onClick={() => toggleColor(c.value)}
                 />
@@ -154,9 +185,24 @@ export function StyleFinder() {
         )}
 
         {step === 3 && (
-          <Step key="step3" title={currentStepTitles[3]}>
+          <Step key="step3" title={stepTitles[3]} subtitle={t('aiStylist.occasionSubtitle', language)}>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {occasions(language).map((o) => (
+                <OptionCard
+                  key={o.value}
+                  label={o.label}
+                  selected={answers.occasion === o.value}
+                  onClick={() => setOccasion(o.value)}
+                />
+              ))}
+            </div>
+          </Step>
+        )}
+
+        {step === 4 && (
+          <Step key="step4" title={stepTitles[4]} subtitle={t('aiStylist.budgetSubtitle', language)}>
             <div className="grid grid-cols-2 gap-3">
-              {currentBudgets.map((b) => (
+              {budgets(language).map((b) => (
                 <OptionCard
                   key={b.value}
                   label={b.label}
@@ -168,47 +214,106 @@ export function StyleFinder() {
           </Step>
         )}
 
-        {step === 4 && topMatch && (
+        {step === 5 && (
           <motion.div
             key="results"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className="text-center"
+            className="relative"
           >
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-secondary">{t('styleFinder.yourMatch', language)}</p>
-            <h3 className="mb-6 text-2xl font-semibold text-primary">{t('styleFinder.weFoundYourVibe', language)}</h3>
+            <ResultsHeader answers={answers} language={language} />
 
-            <div className="mx-auto max-w-xs">
-              <RecommendationCard product={topMatch} matchScore={96} />
+            {relaxationHints.length > 0 && (
+              <div className="mb-6 rounded-xl border border-amber-400/20 bg-amber-950/20 p-4">
+                <p className="text-sm font-medium text-amber-300">
+                  {getRelaxationHintMessage(relaxationHints[0], language)}
+                </p>
+                {relaxationHints.length > 1 && (
+                  <ul className="mt-2 list-inside list-disc text-xs text-amber-200/80">
+                    {relaxationHints.slice(1).map((hint) => (
+                      <li key={hint}>{getRelaxationHintMessage(hint, language)}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {results.length === 0 ? (
+              <EmptyState language={language} onReset={handleReset} />
+            ) : (
+              <>
+                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {results.map((result) => {
+                    const product = getProductById(result.productId);
+                    if (!product) return null;
+                    return (
+                      <AIStylistRecommendationCard
+                        key={product.id}
+                        product={product}
+                        score={result.score}
+                        reasons={result.reasons}
+                      />
+                    );
+                  })}
+                </div>
+
+                {outfits.length > 0 && (
+                  <div className="mt-10">
+                    <h3 className="mb-4 text-lg font-semibold text-white">
+                      {t('aiStylist.coordinatedSets', language)}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                      {outfits.map((outfit) => {
+                        const hat = getProductById(outfit.hatId);
+                        const glasses = getProductById(outfit.glassesId);
+                        if (!hat || !glasses) return null;
+                        return (
+                          <OutfitSetCard
+                            key={`${outfit.hatId}-${outfit.glassesId}`}
+                            hat={hat}
+                            glasses={glasses}
+                            score={outfit.score}
+                            reasons={outfit.reasons}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <Button variant="ghost" onClick={handleReset} className="text-slate-300 hover:text-white">
+                <RefreshCw size={16} className="ltr:mr-2 rtl:ml-2" />
+                {t('styleFinder.startOver', language)}
+              </Button>
+              <Button variant="outline" onClick={() => goToStep(0)}>
+                {t('aiStylist.editPreferences', language)}
+                <ChevronRight size={16} className="ltr:ml-2 rtl:mr-2 rtl:rotate-180" />
+              </Button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleReset}
-              className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary"
-            >
-              <RefreshCw size={16} />
-              {t('styleFinder.startOver', language)}
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {step < 4 && (
-        <div className="mt-8 flex items-center justify-between">
+      {step < 5 && (
+        <div className="relative mt-8 flex items-center justify-between">
           <button
             type="button"
             onClick={prevStep}
             disabled={step === 0}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-background disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 disabled:opacity-40"
           >
             <ArrowLeft size={16} className="rtl:rotate-180" />
             {t('common.back', language)}
           </button>
-          <Button onClick={handleNext} disabled={!canProceed}>
-            {step === 3 ? t('styleFinder.findMyMatch', language) : t('common.next', language)}
-            {step !== 3 && <ArrowRight size={16} className="ml-2 rtl:mr-2 rtl:ml-0 rtl:rotate-180" />}
+          <Button onClick={handleNext} disabled={!canProceed} variant="accent">
+            {step === STEP_COUNT - 1 ? t('styleFinder.findMyMatch', language) : t('common.next', language)}
+            {step !== STEP_COUNT - 1 && (
+              <ArrowRight size={16} className="ltr:ml-2 rtl:mr-2 rtl:rotate-180" />
+            )}
           </Button>
         </div>
       )}
@@ -216,7 +321,15 @@ export function StyleFinder() {
   );
 }
 
-function Step({ title, children }: { title: string; children: React.ReactNode }) {
+function Step({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 16 }}
@@ -224,7 +337,8 @@ function Step({ title, children }: { title: string; children: React.ReactNode })
       exit={{ opacity: 0, x: -16 }}
       transition={{ duration: 0.25 }}
     >
-      <h3 className="mb-6 text-xl font-semibold text-primary md:text-2xl">{title}</h3>
+      <h3 className="mb-1 text-xl font-semibold text-white md:text-2xl">{title}</h3>
+      {subtitle && <p className="mb-6 text-sm text-slate-400">{subtitle}</p>}
       {children}
     </motion.div>
   );
@@ -243,14 +357,102 @@ function OptionCard({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-4 py-5 text-sm font-medium transition-all ${
+      className={`rounded-xl border px-4 py-5 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
         selected
-          ? 'border-primary bg-primary text-white'
-          : 'border-border bg-white text-primary hover:border-primary'
+          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-400/10'
+          : 'border-white/10 bg-white/5 text-slate-300 hover:border-cyan-400/30 hover:bg-white/[0.07]'
       }`}
       aria-pressed={selected}
     >
       {label}
     </button>
+  );
+}
+
+function ResultsHeader({
+  answers,
+  language,
+}: {
+  answers: StyleFinderAnswers;
+  language: 'fa' | 'en';
+}) {
+  const styleLabel = answers.style ? styleLabels(language)[answers.style] : undefined;
+  const shoppingLabel = answers.shoppingFor
+    ? shoppingForOptions(language).find((o) => o.value === answers.shoppingFor)?.label
+    : undefined;
+  const budgetLabel = answers.budget
+    ? budgets(language).find((b) => b.value === answers.budget)?.label
+    : undefined;
+  const occasionLabel = answers.occasion
+    ? occasions(language).find((o) => o.value === answers.occasion)?.label
+    : undefined;
+
+  return (
+    <div className="mb-8 text-center">
+      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
+        <Sparkles size={12} />
+        {t('aiStylist.poweredBy', language)}
+      </div>
+      <h3 className="mb-2 text-2xl font-semibold text-white md:text-3xl">
+        {t('styleFinder.weFoundYourVibe', language)}
+      </h3>
+      <p className="mx-auto max-w-lg text-sm text-slate-400">
+        {t('aiStylist.resultsSubtitle', language)}
+      </p>
+      <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-2">
+        {styleLabel && <Tag label={styleLabel} />}
+        {shoppingLabel && <Tag label={shoppingLabel} />}
+        {occasionLabel && <Tag label={occasionLabel} />}
+        {budgetLabel && <Tag label={budgetLabel} />}
+        {answers.colors.map((color) => (
+          <Tag key={color} label={colorLabels(language)[color]} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Tag({ label }: { label: string }) {
+  return (
+    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
+      {label}
+    </span>
+  );
+}
+
+function EmptyState({
+  language,
+  onReset,
+}: {
+  language: 'fa' | 'en';
+  onReset: () => void;
+}) {
+  return (
+    <div className="py-12 text-center">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+        <Sparkles size={24} className="text-slate-400" />
+      </div>
+      <h4 className="mb-2 text-lg font-medium text-white">
+        {t('aiStylist.noMatchesTitle', language)}
+      </h4>
+      <p className="mx-auto mb-6 max-w-sm text-sm text-slate-400">
+        {t('aiStylist.noMatchesSubtitle', language)}
+      </p>
+      <Button variant="accent" onClick={onReset}>
+        {t('styleFinder.startOver', language)}
+      </Button>
+    </div>
+  );
+}
+
+function DisabledState({ language }: { language: 'fa' | 'en' }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-slate-900 p-10 text-center">
+      <Sparkles size={32} className="mx-auto mb-4 text-slate-500" />
+      <h3 className="mb-2 text-xl font-semibold text-white">
+        {t('aiStylist.disabledTitle', language)}
+      </h3>
+      <p className="text-sm text-slate-400">{t('aiStylist.disabledSubtitle', language)}</p>
+    </div>
   );
 }

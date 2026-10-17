@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStyleFinderStore } from '../../features/style-finder/store/styleFinderStore';
 import type { Style, Color } from '../../types';
-import type { Budget, ShoppingFor } from '../../features/style-finder/store/styleFinderStore';
+import type { Budget, Occasion, ShoppingFor } from '../../features/style-finder/types';
 
 describe('Style Finder Store', () => {
   beforeEach(() => {
@@ -21,6 +21,7 @@ describe('Style Finder Store', () => {
       expect(answers.shoppingFor).toBeUndefined();
       expect(answers.colors).toEqual([]);
       expect(answers.budget).toBeUndefined();
+      expect(answers.occasion).toBeUndefined();
     });
   });
 
@@ -63,6 +64,14 @@ describe('Style Finder Store', () => {
     });
   });
 
+  describe('setOccasion', () => {
+    it('sets the occasion answer', () => {
+      const { setOccasion } = useStyleFinderStore.getState();
+      setOccasion('outdoor' as Occasion);
+      expect(useStyleFinderStore.getState().answers.occasion).toBe('outdoor');
+    });
+  });
+
   describe('navigation', () => {
     it('increments step on nextStep', () => {
       const { nextStep, setStyle } = useStyleFinderStore.getState();
@@ -84,36 +93,59 @@ describe('Style Finder Store', () => {
       prevStep();
       expect(useStyleFinderStore.getState().step).toBe(0);
     });
+
+    it('supports jumping to a specific step', () => {
+      const { goToStep } = useStyleFinderStore.getState();
+      goToStep(3);
+      expect(useStyleFinderStore.getState().step).toBe(3);
+    });
   });
 
   describe('findMatches', () => {
-    it('generates recommendations after completing the quiz', () => {
+    it('generates scored recommendations after completing the quiz', () => {
       const { setStyle, setShoppingFor, toggleColor, setBudget, findMatches } = useStyleFinderStore.getState();
       setStyle('Street' as Style);
       setShoppingFor('hat' as ShoppingFor);
       toggleColor('Black' as Color);
       setBudget('under-30' as Budget);
-      const resultIds = findMatches();
+      const result = findMatches();
       const { results } = useStyleFinderStore.getState();
       expect(results.length).toBeGreaterThan(0);
-      expect(resultIds.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThan(0);
+      expect(results[0]).toHaveProperty('productId');
+      expect(results[0]).toHaveProperty('score');
+      expect(results[0]).toHaveProperty('reasons');
+    });
+
+    it('generates outfit sets when shopping for both', () => {
+      const { setStyle, setShoppingFor, toggleColor, setBudget, findMatches } = useStyleFinderStore.getState();
+      setStyle('Street' as Style);
+      setShoppingFor('both' as ShoppingFor);
+      toggleColor('Black' as Color);
+      setBudget('100-plus' as Budget);
+      findMatches();
+      const { outfits } = useStyleFinderStore.getState();
+      expect(outfits.length).toBeGreaterThan(0);
     });
   });
 
   describe('reset', () => {
     it('resets the quiz to initial state', () => {
-      const { setStyle, setShoppingFor, toggleColor, setBudget, nextStep, reset } = useStyleFinderStore.getState();
+      const { setStyle, setShoppingFor, toggleColor, setBudget, setOccasion, nextStep, reset } = useStyleFinderStore.getState();
       setStyle('Street' as Style);
       setShoppingFor('hat' as ShoppingFor);
       toggleColor('Black' as Color);
       setBudget('under-30' as Budget);
+      setOccasion('outdoor' as Occasion);
       nextStep();
       reset();
-      const { answers, step, results } = useStyleFinderStore.getState();
+      const { answers, step, results, outfits } = useStyleFinderStore.getState();
       expect(step).toBe(0);
       expect(answers.style).toBeUndefined();
       expect(answers.colors).toEqual([]);
+      expect(answers.occasion).toBeUndefined();
       expect(results).toEqual([]);
+      expect(outfits).toEqual([]);
     });
   });
 });

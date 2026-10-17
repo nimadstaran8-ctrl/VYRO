@@ -1,1 +1,6 @@
-export { useStyleFinderStore, type ShoppingFor, type Budget } from '../features/style-finder/store/styleFinderStore';
+export {
+  useStyleFinderStore,
+  type Budget,
+  type Occasion,
+  type ShoppingFor,
+} from '../features/style-finder/store/styleFinderStore';

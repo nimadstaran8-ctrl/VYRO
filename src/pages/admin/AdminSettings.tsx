@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Globe, Bell, Shield, Palette, CreditCard } from 'lucide-react';
+import { Save, Globe, Bell, Shield, Palette, CreditCard, Sparkles, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useLanguageStore } from '../../stores/languageStore';
@@ -10,8 +10,15 @@ import {
   updateLanguageSettings,
   updateCurrencySettings,
   updatePaymentSettings,
+  updateAIStylistSettings,
   type Settings,
 } from '../../services/settings';
+import { getProducts } from '../../services/catalog/productService';
+import { findProductsWithMissingAttributes } from '../../features/style-finder/services/recommendationEngine';
+import type { ScoringWeights } from '../../features/style-finder/types';
+import { DEFAULT_WEIGHTS } from '../../features/style-finder/types';
+import type { Style } from '../../types';
+import { STYLES } from '../../constants/product';
 import { setUsdToTomanRate } from '../../services/currency';
 
 export function AdminSettings() {
@@ -21,6 +28,11 @@ export function AdminSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings>(() => getSettings());
+  const [missingAttributes, setMissingAttributes] = useState(() => findProductsWithMissingAttributes(getProducts()));
+
+  const refreshMissingAttributes = () => {
+    setMissingAttributes(findProductsWithMissingAttributes(getProducts()));
+  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -28,6 +40,7 @@ export function AdminSettings() {
     updateStoreSettings(settings.store);
     updateLanguageSettings(settings.language);
     updatePaymentSettings(settings.payment);
+    updateAIStylistSettings(settings.aiStylist);
 
     const currencyResult = updateCurrencySettings(settings.currency);
     if (currencyResult.success && settings.currency.exchangeRate) {
@@ -61,6 +74,40 @@ export function AdminSettings() {
     setSettings(prev => ({
       ...prev,
       currency: { ...prev.currency, [field]: value }
+    }));
+  };
+
+  const updateAIStylist = (field: string, value: unknown) => {
+    setSettings(prev => ({
+      ...prev,
+      aiStylist: { ...prev.aiStylist, [field]: value }
+    }));
+  };
+
+  const updateAIStylistWeight = (field: keyof ScoringWeights, value: number) => {
+    setSettings(prev => ({
+      ...prev,
+      aiStylist: {
+        ...prev.aiStylist,
+        weights: { ...prev.aiStylist.weights, [field]: Math.max(0, value) }
+      }
+    }));
+  };
+
+  const toggleStyleEnabled = (style: Style) => {
+    setSettings(prev => {
+      const current = prev.aiStylist.enabledStyles;
+      const next = current.includes(style)
+        ? current.filter(s => s !== style)
+        : [...current, style];
+      return { ...prev, aiStylist: { ...prev.aiStylist, enabledStyles: next } };
+    });
+  };
+
+  const resetWeights = () => {
+    setSettings(prev => ({
+      ...prev,
+      aiStylist: { ...prev.aiStylist, weights: { ...DEFAULT_WEIGHTS } }
     }));
   };
 
@@ -270,6 +317,148 @@ export function AdminSettings() {
             </span>
             <div className="relative w-11 h-6 bg-border rounded-full peer peer-checked:bg-primary peer-focus:outline-none after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"></div>
           </label>
+        </div>
+
+        <div className="bg-surface rounded-2xl p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-primary">
+              {t('aiStylist.admin.title', language)}
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-text-secondary">
+            {t('aiStylist.admin.description', language)}
+          </p>
+
+          <label className="mb-6 flex items-center justify-between cursor-pointer">
+            <span className="text-primary">{t('aiStylist.admin.enabled', language)}</span>
+            <input
+              type="checkbox"
+              checked={settings.aiStylist.enabled}
+              onChange={(e) => updateAIStylist('enabled', e.target.checked)}
+              className="h-5 w-5 rounded border-border text-primary focus:ring-primary"
+            />
+          </label>
+
+          <div className="mb-6">
+            <span className="mb-2 block text-sm font-medium text-primary">
+              {t('aiStylist.admin.enabledStyles', language)}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {STYLES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => toggleStyleEnabled(s.value)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                    settings.aiStylist.enabledStyles.includes(s.value)
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-border text-text-secondary hover:border-primary/50'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-6 grid gap-4 sm:grid-cols-2">
+            <label className="flex items-center justify-between cursor-pointer sm:col-span-2">
+              <span className="text-primary">{t('aiStylist.admin.requireStock', language)}</span>
+              <input
+                type="checkbox"
+                checked={settings.aiStylist.requireStock}
+                onChange={(e) => updateAIStylist('requireStock', e.target.checked)}
+                className="h-5 w-5 rounded border-border text-primary focus:ring-primary"
+              />
+            </label>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-primary">
+                {t('aiStylist.admin.maxRecommendations', language)}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={settings.aiStylist.maxRecommendations}
+                onChange={(e) => updateAIStylist('maxRecommendations', Math.max(1, Number(e.target.value)))}
+                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-primary">{t('aiStylist.admin.weights', language)}</span>
+              <button
+                type="button"
+                onClick={resetWeights}
+                className="text-xs text-text-secondary hover:text-primary"
+              >
+                {t('aiStylist.admin.resetWeights', language)}
+              </button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  ['weightStyle', 'styleMatch'],
+                  ['weightColor', 'colorMatch'],
+                  ['weightCategory', 'categoryMatch'],
+                  ['weightBudget', 'budgetFit'],
+                  ['weightOccasion', 'occasionMatch'],
+                  ['weightRating', 'rating'],
+                  ['weightBestSeller', 'bestSeller'],
+                  ['weightFeatured', 'featured'],
+                  ['weightInStock', 'inStock'],
+                ] as const
+              ).map(([labelKey, field]) => (
+                <div key={field}>
+                  <label className="mb-1 block text-xs text-text-secondary">
+                    {t(`aiStylist.admin.${labelKey}`, language)}
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={settings.aiStylist.weights[field]}
+                    onChange={(e) => updateAIStylistWeight(field, Number(e.target.value))}
+                    className="w-full rounded-xl border border-border bg-surface px-4 py-2 text-sm text-primary focus:border-primary focus:outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-medium text-primary">
+                {t('aiStylist.admin.missingAttributes', language)}
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-text-secondary">
+              {t('aiStylist.admin.missingAttributesDesc', language)}
+            </p>
+            <button
+              type="button"
+              onClick={refreshMissingAttributes}
+              className="mb-3 text-xs text-primary hover:underline"
+            >
+              {t('aiStylist.admin.refreshList', language)}
+            </button>
+            {missingAttributes.length === 0 ? (
+              <p className="text-sm text-green-600">{t('aiStylist.admin.noMissingAttributes', language)}</p>
+            ) : (
+              <ul className="max-h-48 overflow-auto rounded-xl border border-border bg-background p-2 text-sm">
+                {missingAttributes.map((report) => (
+                  <li key={report.productId} className="border-b border-border px-2 py-2 last:border-0">
+                    <span className="font-medium text-primary">{report.name}</span>
+                    <span className="text-text-secondary"> — {report.missing.join(', ')}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>
