@@ -357,7 +357,7 @@ function ImagePreview({ image, index, total, onRemove, onSetPrimary, onReorder, 
       </div>
 
       {image.isPrimary && (
-        <div className="absolute top-2 start-2 flex items-center gap-1 px-2 py-1 bg-primary text-white text-xs rounded-full">
+        <div className="absolute top-2 start-2 flex items-center gap-1 px-2 py-1 bg-primary text-white text-xs rounded-full dark:bg-white dark:text-primary">
           <Star className="h-3 w-3 fill-current" />
           {content.primary}
         </div>

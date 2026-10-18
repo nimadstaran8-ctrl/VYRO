@@ -44,7 +44,7 @@ export function Wishlist() {
         </div>
 
         {products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-white py-20 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-surface py-20 text-center">
             <Heart size={48} className="text-border" />
             <h2 className="mt-4 text-lg font-medium text-primary">{t('wishlist.empty', language)}</h2>
             <p className="mt-1 text-text-secondary">{"محصولات مورد علاقه خود را ذخیره کنید و هر زمان به آن‌ها بازگردید"}</p>
@@ -77,7 +77,7 @@ function WishlistProductCard({ product, onRemove, onAddToCart }: WishlistProduct
   const language = useLanguageStore((state) => state.language);
 
   return (
-    <div className="rounded-2xl bg-white p-3">
+    <div className="rounded-2xl bg-white dark:bg-surface p-3">
       <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden rounded-xl bg-background">
         <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}

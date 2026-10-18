@@ -90,11 +90,11 @@ export function AdminCustomers() {
       </div>
 
       {deleteError && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-600">{deleteError}</p>
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:bg-red-950/20 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>
           <button
             onClick={() => setDeleteError(null)}
-            className="mt-1 text-xs text-red-500 hover:text-red-700"
+            className="mt-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             {content.dismiss}
           </button>
@@ -166,7 +166,7 @@ export function AdminCustomers() {
                         </Link>
                         <button
                           onClick={() => setDeleteConfirm(customer)}
-                          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500"
+                          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/20 dark:hover:text-red-400"
                           aria-label={`${content.deleteUser} ${customer.firstName} ${customer.lastName}`}
                           title={content.deleteUser}
                         >

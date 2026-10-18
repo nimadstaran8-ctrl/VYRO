@@ -35,10 +35,10 @@ export function AIStylistRecommendationCard({
   const inStock = product.stock > 0;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/[0.07]">
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border dark:border-white/10 bg-background dark:bg-white/5 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-black/5 dark:hover:bg-white/[0.07]">
       <Link
         to={`/product/${product.slug}`}
-        className="relative aspect-square overflow-hidden bg-black/20"
+        className="relative aspect-square overflow-hidden bg-black/5 dark:bg-black/20"
         aria-label={product.name}
       >
         <ReusableImage
@@ -53,7 +53,7 @@ export function AIStylistRecommendationCard({
         </div>
         {!inStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">
+            <span className="rounded-full bg-surface dark:bg-slate-900 px-3 py-1 text-xs font-medium text-primary dark:text-white">
               {t('product.outOfStock', language)}
             </span>
           </div>
@@ -74,11 +74,11 @@ export function AIStylistRecommendationCard({
         </div>
 
         <Link to={`/product/${product.slug}`}>
-          <h3 className="text-sm font-medium text-white transition-colors hover:text-cyan-300">
+          <h3 className="text-sm font-medium text-primary dark:text-white transition-colors hover:text-cyan-300">
             {product.name}
           </h3>
         </Link>
-        <p className="mt-1 line-clamp-2 text-xs text-slate-400">
+        <p className="mt-1 line-clamp-2 text-xs text-text-secondary dark:text-slate-400">
           {product.description}
         </p>
 

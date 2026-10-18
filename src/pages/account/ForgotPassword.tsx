@@ -170,11 +170,11 @@ export function ForgotPassword() {
           >
             {errors.general && (
               <div
-                className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3"
+                className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20"
                 role="alert"
               >
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-                <p className="text-sm text-red-600">{errors.general}</p>
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500 dark:text-red-400" />
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
               </div>
             )}
 
@@ -236,11 +236,11 @@ export function ForgotPassword() {
           >
             {errors.general && (
               <div
-                className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3"
+                className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20"
                 role="alert"
               >
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-                <p className="text-sm text-red-600">{errors.general}</p>
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500 dark:text-red-400" />
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
               </div>
             )}
 

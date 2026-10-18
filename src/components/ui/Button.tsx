@@ -24,10 +24,14 @@ export function Button({
     'inline-flex items-center justify-center font-medium transition-all duration-200 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary/90',
-    secondary: 'bg-white text-primary border border-border hover:bg-background',
-    outline: 'bg-transparent text-primary border border-primary hover:bg-primary hover:text-white',
-    ghost: 'bg-transparent text-primary hover:bg-black/5',
+    primary:
+      'bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-primary dark:hover:bg-white/90',
+    secondary:
+      'bg-white text-primary border border-border hover:bg-background dark:bg-surface dark:text-primary dark:border-border dark:hover:bg-background',
+    outline:
+      'bg-transparent text-primary border border-primary hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-primary',
+    ghost:
+      'bg-transparent text-primary hover:bg-black/5 dark:hover:bg-white/10',
     accent: 'bg-accent text-primary hover:bg-accent/90',
   };
 

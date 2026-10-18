@@ -50,7 +50,7 @@ export function FAQ() {
           <h1 className="text-3xl font-semibold uppercase tracking-wider text-primary md:text-4xl">{t('info.faq', language)}</h1>
           <p className="mt-4 text-text-secondary">{t('info.faqDesc', language)}</p>
         </div>
-        <div className="rounded-2xl bg-white p-6 md:p-10">
+        <div className="rounded-2xl bg-white dark:bg-surface p-6 md:p-10">
           <Accordion items={faqItems} />
         </div>
       </div>

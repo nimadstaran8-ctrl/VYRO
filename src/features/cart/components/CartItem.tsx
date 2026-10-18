@@ -51,7 +51,7 @@ export function CartItem({ item }: CartItemProps) {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center rounded-lg border border-border bg-white">
+          <div className="flex items-center rounded-lg border border-border bg-white dark:bg-surface">
             <button
               type="button"
               onClick={() => updateQuantity(item.productId, item.color, item.size, item.quantity - 1)}

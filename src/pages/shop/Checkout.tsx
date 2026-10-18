@@ -376,8 +376,8 @@ export function Checkout() {
         <p className="mt-2 text-sm text-text-secondary">
           {content.total}: {formatPrice(placedOrder.total, currency)}
         </p>
-        <p className="mx-auto mt-4 flex max-w-md items-start justify-center gap-2 text-sm text-amber-700">
-          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+        <p className="mx-auto mt-4 flex max-w-md items-start justify-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0 dark:text-amber-400" />
           <span>{content.awaitingApproval}</span>
         </p>
         <p className="mt-2 text-xs text-text-secondary">{content.orderPlacedDesc}</p>
@@ -416,7 +416,7 @@ export function Checkout() {
 
         <form onSubmit={handleSubmit} noValidate className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <section className="rounded-2xl bg-white p-6">
+            <section className="rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="text-lg font-semibold text-primary">{content.customerInfo}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Input
@@ -461,7 +461,7 @@ export function Checkout() {
               </div>
             </section>
 
-            <section className="rounded-2xl bg-white p-6">
+            <section className="rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="text-lg font-semibold text-primary">{content.shippingAddress}</h2>
               <div className="mt-4 grid gap-4">
                 <Input
@@ -514,12 +514,12 @@ export function Checkout() {
               </div>
             </section>
 
-            <section className="rounded-2xl bg-white p-6">
+            <section className="rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="text-lg font-semibold text-primary">{content.cardToCard}</h2>
               <p className="mt-2 text-sm text-text-secondary">{content.cardToCardDesc}</p>
 
               {!cardConfigured ? (
-                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700" role="alert">
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400" role="alert">
                   {content.noCardConfigured}
                 </p>
               ) : (
@@ -565,15 +565,15 @@ export function Checkout() {
                       aria-label={content.uploadReceipt}
                     />
                     {receipt ? (
-                      <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                      <div className="flex items-center gap-4 rounded-xl border border-green-200 bg-green-50 p-4 dark:bg-green-950/20 dark:border-green-800">
                         <img
                           src={receipt.previewUrl}
                           alt={content.receiptUploaded}
                           className="h-16 w-16 rounded-lg object-cover"
                         />
                         <div className="flex-1">
-                          <p className="flex items-center gap-1.5 text-sm font-medium text-green-700">
-                            <ImageUp className="h-4 w-4" />
+                          <p className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-400">
+                            <ImageUp className="h-4 w-4 dark:text-green-400" />
                             {content.receiptUploaded}
                           </p>
                           <div className="mt-2 flex gap-3">
@@ -587,7 +587,7 @@ export function Checkout() {
                             <button
                               type="button"
                               onClick={handleRemoveReceipt}
-                              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600"
+                              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               {content.removeReceipt}
@@ -610,7 +610,7 @@ export function Checkout() {
                       </button>
                     )}
                     {receiptError && (
-                      <p className="mt-2 text-sm text-red-600" role="alert">
+                      <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
                         {receiptError}
                       </p>
                     )}
@@ -621,7 +621,7 @@ export function Checkout() {
           </div>
 
           <div className="h-fit space-y-6">
-            <section className="rounded-2xl bg-white p-6">
+            <section className="rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="text-lg font-semibold text-primary">{content.orderSummary}</h2>
               <div className="mt-4 max-h-[300px] overflow-y-auto">
                 {items.map((item, index) => (
@@ -648,7 +648,7 @@ export function Checkout() {
                 </div>
               </div>
               {orderError && (
-                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600" role="alert">
+                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20 dark:border-red-800 dark:text-red-400" role="alert">
                   {orderError}
                 </p>
               )}

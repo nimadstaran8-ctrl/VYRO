@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Layout, PageTransition } from './routes/routeConfig';
 import { routeConfig, type RouteConfig } from './routes/routes';
 import { useLanguageStore } from '../stores/languageStore';
+import { useThemeStore, applyTheme } from '../stores/themeStore';
 import { getDirection } from '../lib/i18n';
 import { useImageStoreVersion } from '../hooks/useImageStoreVersion';
 
@@ -68,6 +69,7 @@ function AnimatedRoutes() {
 export default function App() {
   const language = useLanguageStore((state) => state.language);
   const direction = getDirection(language);
+  const theme = useThemeStore((state) => state.theme);
 
   // Re-render the tree when local image stores hydrate or change so product
   // and media images resolve as soon as they are available.
@@ -77,6 +79,16 @@ export default function App() {
     document.documentElement.dir = direction;
     document.documentElement.lang = language;
   }, [direction, language]);
+
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme === 'system') {
+      const media = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => applyTheme('system');
+      media.addEventListener('change', handler);
+      return () => media.removeEventListener('change', handler);
+    }
+  }, [theme]);
 
   return <AnimatedRoutes />;
 }

@@ -183,11 +183,11 @@ export function AdminProducts() {
       </div>
 
       {deleteError && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-600">{deleteError}</p>
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:bg-red-950/20 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>
           <button
             onClick={() => setDeleteError(null)}
-            className="mt-1 text-xs text-red-500 hover:text-red-700"
+            className="mt-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             {content.dismiss}
           </button>
@@ -266,7 +266,7 @@ export function AdminProducts() {
                       <EditablePrice product={product} language={language} onSaved={() => setProducts(getAllProducts())} />
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-sm ${product.stock <= 10 ? 'text-orange-600' : 'text-primary'}`}>
+                      <span className="text-sm ${product.stock <= 10 ? 'text-orange-600 dark:text-amber-400' : 'text-primary'}">
                         {product.stock}
                       </span>
                     </td>
@@ -294,7 +294,7 @@ export function AdminProducts() {
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(product.id)}
-                          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500"
+                          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/20 dark:hover:text-red-400"
                           aria-label={`${content.delete} ${product.name}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -450,11 +450,11 @@ function EditablePrice({ product, language, onSaved }: EditablePriceProps) {
             onBlur={commit}
             disabled={isSaving}
             aria-label={`${isFa ? content.priceToman : content.priceUsd} — ${product.name}`}
-            className="w-full rounded-lg border border-primary bg-white px-2.5 py-1.5 text-sm text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+            className="w-full rounded-lg border border-primary bg-white px-2.5 py-1.5 text-sm text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 dark:bg-surface"
           />
         </div>
         {error ? (
-          <p className="mt-1 text-xs text-red-500" role="alert">{error}</p>
+          <p className="mt-1 text-xs text-red-500 dark:text-red-400" role="alert">{error}</p>
         ) : isSaving ? (
           <p className="mt-1 text-xs text-text-secondary">{content.saving}</p>
         ) : isFa && Number.isFinite(parsedValue) && parsedValue > 0 && tomanRate > 0 ? (
@@ -483,7 +483,7 @@ function EditablePrice({ product, language, onSaved }: EditablePriceProps) {
         <Pencil className="h-3.5 w-3.5 text-text-secondary opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
       </button>
       {justSaved && (
-        <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
+        <Check className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />
       )}
     </span>
   );

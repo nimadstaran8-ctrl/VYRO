@@ -22,7 +22,7 @@ export function WishlistButton({ productId, size = 18, className }: WishlistButt
         toggleItem(productId);
       }}
       className={cn(
-        'flex items-center justify-center rounded-full bg-white p-2 shadow-sm transition-all hover:shadow-md',
+        'flex items-center justify-center rounded-full bg-white dark:bg-surface p-2 shadow-sm transition-all hover:shadow-md',
         isActive ? 'text-red-500' : 'text-primary hover:text-red-500',
         className
       )}

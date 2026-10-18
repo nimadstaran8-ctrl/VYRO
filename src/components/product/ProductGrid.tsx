@@ -15,7 +15,7 @@ export function ProductGrid({ products, emptyMessage }: ProductGridProps) {
 
   if (products.length === 0) {
     return (
-      <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl bg-white p-8 text-center">
+      <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl bg-white p-8 text-center dark:bg-surface">
         <p className="text-text-secondary">{message}</p>
       </div>
     );

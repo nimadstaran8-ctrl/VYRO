@@ -81,7 +81,7 @@ export function Home() {
         <ProductGrid products={featured} />
       </section>
 
-      <section className="bg-white py-24">
+      <section className="bg-white dark:bg-surface py-24">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{styleAssistantText.label}</p>
           <h2 className="mt-3 text-3xl font-semibold uppercase tracking-wider text-primary md:text-4xl">

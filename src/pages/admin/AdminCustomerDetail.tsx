@@ -82,7 +82,7 @@ export function AdminCustomerDetail() {
           <h1 className="text-3xl font-semibold text-primary">{customer.firstName} {customer.lastName}</h1>
           <p className="mt-1 text-sm text-text-secondary" dir="ltr">{customer.email}</p>
           {deleteError && (
-            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600" role="alert">
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20 dark:border-red-800 dark:text-red-400" role="alert">
               {deleteError}
             </p>
           )}
@@ -90,7 +90,7 @@ export function AdminCustomerDetail() {
         <button
           type="button"
           onClick={() => setShowDeleteConfirm(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+          className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:text-red-400 dark:hover:bg-red-950/20"
         >
           <Trash2 className="h-4 w-4" />
           {language === 'fa' ? 'حذف کاربر' : 'Delete User'}

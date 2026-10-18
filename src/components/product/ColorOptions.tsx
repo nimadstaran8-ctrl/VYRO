@@ -30,8 +30,8 @@ export function ColorOptions({ colors, selected, onChange }: ColorOptionsProps) 
             className={cn(
               'group relative flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-all',
               isSelected
-                ? 'border-primary bg-primary text-white'
-                : 'border-border bg-white text-primary hover:border-primary'
+                ? 'border-primary bg-primary text-white dark:bg-white dark:text-primary'
+                : 'border-border bg-white dark:bg-surface text-primary hover:border-primary'
             )}
             aria-pressed={isSelected}
           >

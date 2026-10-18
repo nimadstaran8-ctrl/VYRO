@@ -92,7 +92,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 8 }}
           transition={{ duration: 0.2 }}
-          className="absolute bottom-3 start-3 end-3 flex items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white hover:bg-primary/90"
+          className="absolute bottom-3 start-3 end-3 flex items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white hover:bg-primary/90 dark:bg-white dark:text-primary dark:hover:bg-white/90"
         >
           <ShoppingBag size={16} />
           {t('product.addToCart', language)}

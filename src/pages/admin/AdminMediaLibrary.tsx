@@ -333,7 +333,7 @@ function ImageCard({ image, language, hasError, onEdit, onReplace, onDelete, onI
         <p className="font-medium text-primary truncate text-sm">{image.name}</p>
         <p className="text-xs text-text-secondary mt-0.5">{formatFileSize(image.size)}</p>
         {image.usedIn.length > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
+          <div className="mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-3 w-3" />
             <span>{image.usedIn.length} {t('media.usedIn', language)}</span>
           </div>

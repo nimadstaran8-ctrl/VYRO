@@ -190,14 +190,14 @@ export function AdminFooterSocial() {
       </div>
 
       {saveMessage && (
-        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
-          <p className="text-sm text-green-600">{saveMessage}</p>
+        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 dark:bg-green-950/20 dark:border-green-800">
+          <p className="text-sm text-green-600 dark:text-green-400">{saveMessage}</p>
         </div>
       )}
 
       {saveError && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-600">{saveError}</p>
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:bg-red-950/20 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{saveError}</p>
         </div>
       )}
 

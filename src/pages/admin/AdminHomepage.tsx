@@ -50,8 +50,8 @@ export function AdminHomepage() {
       </div>
 
       {saveMessage && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-sm text-green-600">{saveMessage}</p>
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl dark:bg-green-950/20 dark:border-green-800">
+          <p className="text-sm text-green-600 dark:text-green-400">{saveMessage}</p>
         </div>
       )}
 

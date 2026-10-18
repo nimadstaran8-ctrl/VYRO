@@ -43,7 +43,7 @@ export function Cart() {
         <h1 className="text-3xl font-semibold uppercase tracking-wider text-primary md:text-4xl">{content.title}</h1>
 
         {items.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center rounded-2xl bg-white py-20 text-center">
+          <div className="mt-8 flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-surface py-20 text-center">
             <ShoppingBag size={48} className="text-border" />
             <h2 className="mt-4 text-lg font-medium text-primary">{content.empty}</h2>
             <p className="mt-1 text-text-secondary">{content.discoverPieces}</p>
@@ -54,7 +54,7 @@ export function Cart() {
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <div className="rounded-2xl bg-white p-6">
+              <div className="rounded-2xl bg-white dark:bg-surface p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm text-text-secondary">{content.productsCount}</p>
                   <button
@@ -76,7 +76,7 @@ export function Cart() {
               </div>
             </div>
 
-            <div className="h-fit rounded-2xl bg-white p-6">
+            <div className="h-fit rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="text-lg font-semibold text-primary">{content.orderSummary}</h2>
               <div className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-text-secondary">

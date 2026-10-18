@@ -39,11 +39,11 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
   const setTotal = hat.priceUSD + glasses.priceUSD;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-950/30 to-slate-900/50 p-4 backdrop-blur-sm">
+    <div className="overflow-hidden rounded-2xl border border-cyan-400/20 bg-surface p-4 backdrop-blur-sm dark:bg-gradient-to-br dark:from-cyan-950/30 dark:to-slate-900/50">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Package size={16} className="text-cyan-400" />
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-primary dark:text-white">
             {t('aiStylist.completeSet', language)}
           </span>
         </div>
@@ -55,7 +55,7 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
       <div className="grid grid-cols-2 gap-3">
         <Link
           to={`/product/${hat.slug}`}
-          className="group relative overflow-hidden rounded-xl bg-black/20"
+          className="group relative overflow-hidden rounded-xl bg-black/5 dark:bg-black/20"
           aria-label={hat.name}
         >
           <ReusableImage
@@ -68,7 +68,7 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
         </Link>
         <Link
           to={`/product/${glasses.slug}`}
-          className="group relative overflow-hidden rounded-xl bg-black/20"
+          className="group relative overflow-hidden rounded-xl bg-black/5 dark:bg-black/20"
           aria-label={glasses.name}
         >
           <ReusableImage
@@ -83,11 +83,11 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
 
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="font-medium text-white">{hat.name}</p>
+          <p className="font-medium text-primary dark:text-white">{hat.name}</p>
           <Price price={hat.priceUSD} oldPrice={hat.oldPriceUSD} size="sm" />
         </div>
         <div>
-          <p className="font-medium text-white">{glasses.name}</p>
+          <p className="font-medium text-primary dark:text-white">{glasses.name}</p>
           <Price price={glasses.priceUSD} oldPrice={glasses.oldPriceUSD} size="sm" />
         </div>
       </div>
@@ -104,10 +104,10 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+      <div className="mt-4 flex items-center justify-between border-t border-border dark:border-white/10 pt-4">
         <div>
-          <p className="text-xs text-slate-400">{t('aiStylist.setTotal', language)}</p>
-          <div className="text-lg font-semibold text-white">
+          <p className="text-xs text-text-secondary dark:text-slate-400">{t('aiStylist.setTotal', language)}</p>
+          <div className="text-lg font-semibold text-primary dark:text-white">
             <Price price={setTotal} size="md" />
           </div>
         </div>

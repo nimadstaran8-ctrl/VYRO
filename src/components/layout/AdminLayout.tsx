@@ -119,7 +119,7 @@ export function AdminLayout() {
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 isActive(item.path)
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-white dark:bg-white dark:text-primary'
                   : 'text-primary hover:bg-background'
               )}
             >
@@ -141,7 +141,7 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:text-red-400 dark:hover:bg-red-950/20"
           >
             <LogOut className="h-5 w-5 rtl:rotate-180" />
             <span>{language === 'fa' ? 'خروج از حساب' : 'Sign Out'}</span>

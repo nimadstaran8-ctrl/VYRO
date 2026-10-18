@@ -8,6 +8,7 @@ import { useCartStore } from '../../stores/cartStore';
 import { useWishlistStore } from '../../stores/wishlistStore';
 import { SearchModal } from '../search/SearchModal';
 import { LanguageSwitcher } from '../../features/language/components/LanguageSwitcher';
+import { ThemeToggle } from '../../features/theme/components/ThemeToggle';
 import { useUserSession } from '../../features/account/hooks/useUserSession';
 import { logoutUser } from '../../features/account/services/userAuth';
 import { useAdminSession } from '../../features/admin/hooks/useAdminSession';
@@ -43,7 +44,8 @@ export function Header() {
       <header
         className={cn(
           'fixed left-0 right-0 top-0 z-40 transition-all duration-300',
-          isScrolled ? 'bg-background/95 py-3 shadow-sm backdrop-blur-md' : 'bg-transparent py-5'
+          isScrolled ? 'bg-background/95 py-3 shadow-sm backdrop-blur-md' : 'bg-transparent py-5',
+          'dark:bg-background/90 dark:backdrop-blur-md'
         )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -51,7 +53,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="rounded-full p-2 text-primary hover:bg-black/5 lg:hidden"
+            className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 lg:hidden"
             aria-label="Open menu"
           >
             <Menu size={22} />
@@ -89,15 +91,16 @@ export function Header() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="rounded-full p-2 text-primary hover:bg-black/5"
+              className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
               aria-label={t('nav.search', language)}
             >
               <Search size={20} />
             </button>
             <LanguageSwitcher />
+            <ThemeToggle className="hidden sm:flex" />
             <Link
               to="/wishlist"
-              className="relative hidden rounded-full p-2 text-primary hover:bg-black/5 sm:block"
+              className="relative hidden rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 sm:block"
               aria-label={t('nav.wishlist', language)}
             >
               <Heart size={20} />
@@ -112,7 +115,7 @@ export function Header() {
               onClick={() => {
                 toggleCart();
               }}
-              className="relative rounded-full p-2 text-primary hover:bg-black/5"
+              className="relative rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
               aria-label={t('nav.cart', language)}
             >
               <ShoppingBag size={20} />
@@ -125,7 +128,7 @@ export function Header() {
             {adminSession && (
               <Link
                 to="/admin"
-                className="rounded-full p-2 text-primary hover:bg-black/5"
+                className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
                 aria-label={t('nav.admin', language)}
                 title={t('nav.admin', language)}
               >
@@ -147,7 +150,7 @@ export function Header() {
                     logoutUser();
                     navigate('/');
                   }}
-                  className="rounded-full p-2 text-primary hover:bg-black/5"
+                  className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
                   aria-label={t('nav.logout', language)}
                   title={t('nav.logout', language)}
                 >
@@ -157,7 +160,7 @@ export function Header() {
             ) : (
               <Link
                 to="/login"
-                className="rounded-full p-2 text-primary hover:bg-black/5"
+                className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
                 aria-label={t('nav.login', language)}
                 title={t('nav.login', language)}
               >
@@ -193,7 +196,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-full p-2 text-primary hover:bg-black/5"
+                  className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
                   aria-label="Close menu"
                 >
                   <X size={24} />
@@ -213,6 +216,10 @@ export function Header() {
               </nav>
               <div className="absolute bottom-0 left-0 right-0 border-t border-border p-6">
                 <div className="flex items-center justify-around">
+                  <ThemeToggle
+                    className="flex"
+                    onClick={() => setMobileMenuOpen(false)}
+                  />
                   <Link
                     to="/wishlist"
                     onClick={() => setMobileMenuOpen(false)}

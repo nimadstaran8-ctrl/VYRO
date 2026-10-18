@@ -63,7 +63,7 @@ export function Shop() {
         </div>
 
         <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex items-center gap-2 rounded-full bg-white p-1">
+          <div className="flex items-center gap-2 rounded-full bg-white dark:bg-surface p-1">
             {currentFilters.map((f) => (
               <button
                 key={f.value}
@@ -72,7 +72,7 @@ export function Shop() {
                 className={cn(
                   'rounded-full px-5 py-2 text-sm font-medium transition-colors',
                   activeFilter === f.value
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-white dark:bg-white dark:text-primary'
                     : 'text-primary hover:bg-background'
                 )}
               >
@@ -85,7 +85,7 @@ export function Shop() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SimpleSort)}
-              className="appearance-none rounded-full border border-border bg-white py-2 pl-5 pr-10 text-sm text-primary focus:border-primary focus:outline-none"
+              className="appearance-none rounded-full border border-border bg-white dark:bg-surface py-2 pl-5 pr-10 text-sm text-primary focus:border-primary focus:outline-none"
             >
               {currentSortOptions.map((option) => (
                 <option key={option.value} value={option.value}>

@@ -183,7 +183,7 @@ export function AdminOrderDetail() {
               </span>
             </div>
             {order.discount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
+              <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                 <span>{language === 'fa' ? 'تخفیف' : 'Discount'}</span>
                 <span>-${order.discount}</span>
               </div>
@@ -293,11 +293,11 @@ export function AdminOrderDetail() {
           )}
 
           {order.status === 'awaiting-approval' && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-amber-800">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm dark:bg-amber-950/20 dark:border-amber-800">
+              <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-400">
                 {language === 'fa' ? 'تأیید پرداخت کارت به کارت' : 'Confirm Card-to-Card Payment'}
               </h2>
-              <p className="mt-2 text-sm text-amber-700">
+              <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
                 {language === 'fa'
                   ? 'فیش واریز را بررسی کنید. تأیید پرداخت، سفارش را «پرداخت شده» می‌کند و رد آن سفارش را لغو و موجودی محصولات را برمی‌گرداند.'
                   : 'Review the receipt. Approving marks the order as paid; rejecting cancels the order and returns the reserved stock.'}
@@ -315,7 +315,7 @@ export function AdminOrderDetail() {
                   variant="outline"
                   onClick={() => setRejectConfirm(true)}
                   disabled={isUpdating}
-                  className="text-red-500 hover:bg-red-50"
+                  className="text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
                 >
                   <XCircle className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
                   {language === 'fa' ? 'رد پرداخت' : 'Reject Payment'}
@@ -329,7 +329,7 @@ export function AdminOrderDetail() {
               {language === 'fa' ? 'به‌روزرسانی وضعیت' : 'Update Status'}
             </h2>
             {updateError && (
-              <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-600" role="alert">
+              <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-600 dark:bg-red-950/20 dark:text-red-400" role="alert">
                 {updateError}
               </p>
             )}
@@ -341,7 +341,7 @@ export function AdminOrderDetail() {
                   variant={order.status === status ? 'primary' : 'outline'}
                   onClick={() => handleStatusUpdate(status)}
                   disabled={isUpdating}
-                  className={status === 'cancelled' && order.status !== status ? 'text-red-500 hover:bg-red-50' : ''}
+                  className={status === 'cancelled' && order.status !== status ? 'text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20' : ''}
                 >
                   {getOrderStatusLabel(status, language)}
                 </Button>

@@ -42,7 +42,7 @@ export function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: language === 'fa' ? '-100%' : '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl rtl:origin-right"
+            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl rtl:origin-right dark:bg-surface"
             role="dialog"
             aria-modal="true"
             aria-label={t('cart.yourCart', language)}
@@ -58,7 +58,7 @@ export function CartDrawer() {
               <button
                 type="button"
                 onClick={closeCart}
-                className="rounded-full p-2 text-text-secondary hover:bg-background"
+                className="rounded-full p-2 text-text-secondary hover:bg-background dark:hover:bg-white/10"
                 aria-label={t('common.close', language)}
               >
                 <X size={20} />

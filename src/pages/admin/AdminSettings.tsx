@@ -127,8 +127,8 @@ export function AdminSettings() {
       </div>
 
       {saveMessage && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-sm text-green-600">{saveMessage}</p>
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl dark:bg-green-950/20 dark:border-green-800">
+          <p className="text-sm text-green-600 dark:text-green-400">{saveMessage}</p>
         </div>
       )}
 
@@ -352,7 +352,7 @@ export function AdminSettings() {
                   onClick={() => toggleStyleEnabled(s.value)}
                   className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                     settings.aiStylist.enabledStyles.includes(s.value)
-                      ? 'border-primary bg-primary text-white'
+                      ? 'border-primary bg-primary text-white dark:bg-white dark:text-primary'
                       : 'border-border text-text-secondary hover:border-primary/50'
                   }`}
                 >
@@ -431,7 +431,7 @@ export function AdminSettings() {
 
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
               <span className="text-sm font-medium text-primary">
                 {t('aiStylist.admin.missingAttributes', language)}
               </span>
@@ -447,7 +447,7 @@ export function AdminSettings() {
               {t('aiStylist.admin.refreshList', language)}
             </button>
             {missingAttributes.length === 0 ? (
-              <p className="text-sm text-green-600">{t('aiStylist.admin.noMissingAttributes', language)}</p>
+              <p className="text-sm text-green-600 dark:text-green-400">{t('aiStylist.admin.noMissingAttributes', language)}</p>
             ) : (
               <ul className="max-h-48 overflow-auto rounded-xl border border-border bg-background p-2 text-sm">
                 {missingAttributes.map((report) => (

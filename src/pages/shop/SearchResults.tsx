@@ -40,7 +40,7 @@ export function SearchResults() {
           {matchedProducts.length > 0 ? (
             <ProductGrid products={matchedProducts} />
           ) : (
-            <div className="rounded-2xl bg-white py-16 text-center">
+            <div className="rounded-2xl bg-white dark:bg-surface py-16 text-center">
               <p className="text-text-secondary">{language === 'fa' ? `محصولی برای "${query}" یافت نشد.` : `No products found for "${query}".`}</p>
               <Button className="mt-6" asChild>
                 <Link to="/shop">{t('common.browseAll', language)}</Link>

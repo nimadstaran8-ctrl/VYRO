@@ -49,7 +49,7 @@ export function Contact() {
         </div>
 
         <div className="grid gap-12 lg:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 md:p-10">
+          <div className="rounded-2xl bg-white dark:bg-surface p-6 md:p-10">
             {submitted ? (
               <div className="py-12 text-center">
                 <h2 className="text-xl font-semibold text-primary">{language === 'fa' ? 'پیام ارسال شد' : 'Message Sent'}</h2>
@@ -70,21 +70,21 @@ export function Contact() {
 
           <div className="space-y-8">
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white p-5 text-center">
+                <div className="rounded-2xl bg-white dark:bg-surface p-5 text-center">
                 <Mail size={20} className="mx-auto text-accent" />
                 <p className="mt-3 text-sm font-medium text-primary">hello@vyro.com</p>
               </div>
-              <div className="rounded-2xl bg-white p-5 text-center">
+                <div className="rounded-2xl bg-white dark:bg-surface p-5 text-center">
                 <Phone size={20} className="mx-auto text-accent" />
                 <p className="mt-3 text-sm font-medium text-primary">+1 234 567 890</p>
               </div>
-              <div className="rounded-2xl bg-white p-5 text-center">
+                <div className="rounded-2xl bg-white dark:bg-surface p-5 text-center">
                 <MapPin size={20} className="mx-auto text-accent" />
                 <p className="mt-3 text-sm font-medium text-primary">New York, NY</p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-6">
+            <div className="rounded-2xl bg-white dark:bg-surface p-6">
               <h2 className="mb-4 text-lg font-semibold text-primary">{t('nav.faq', language)}</h2>
               <Accordion items={faqItems} />
             </div>

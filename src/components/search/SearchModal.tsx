@@ -71,7 +71,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="h-fit w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="h-fit w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-surface"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 border-b border-border px-4 py-4">
@@ -87,7 +87,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full p-2 text-text-secondary hover:bg-background"
+                className="rounded-full p-2 text-text-secondary hover:bg-background dark:hover:bg-white/10"
                 aria-label={t('common.close', language)}
               >
                 <X size={20} />
@@ -106,7 +106,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         key={term}
                         to={`/search?q=${encodeURIComponent(term)}`}
                         onClick={onClose}
-                        className="rounded-full border border-border px-4 py-2 text-sm text-primary transition-colors hover:bg-background"
+                        className="rounded-full border border-border px-4 py-2 text-sm text-primary transition-colors hover:bg-background dark:hover:bg-white/10"
                       >
                         {term}
                       </Link>
@@ -128,7 +128,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             key={s}
                             to={`/search?q=${encodeURIComponent(s)}`}
                             onClick={onClose}
-                            className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-primary hover:bg-background"
+                            className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-primary hover:bg-background dark:hover:bg-white/10"
                           >
                             <span className="capitalize">{s}</span>
                             <ArrowRight size={14} className="text-text-secondary rtl:rotate-180" />
@@ -149,7 +149,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             key={product.id}
                             to={`/product/${product.slug}`}
                             onClick={onClose}
-                            className="flex items-center gap-3 rounded-xl bg-background p-2 transition-colors hover:bg-black/5"
+                            className="flex items-center gap-3 rounded-xl bg-background p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
                           >
                             <img
                               src={imageErrors[product.id] ? FALLBACK_IMAGE : (product.primaryImage || product.images[0])}
@@ -186,7 +186,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 <Link
                   to={`/search?q=${encodeURIComponent(query)}`}
                   onClick={onClose}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white hover:bg-primary/90"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white hover:bg-primary/90 dark:bg-white dark:text-primary dark:hover:bg-white/90"
                 >
                   {t('search.viewAllResults', language)} "{query}"
                   <ArrowRight size={16} className="rtl:rotate-180" />

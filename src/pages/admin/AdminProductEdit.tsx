@@ -395,7 +395,7 @@ export function AdminProductEdit() {
           <Button
             variant="outline"
             onClick={() => setShowDeleteConfirm(true)}
-            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20 dark:hover:text-red-400"
           >
             <Trash2 className="h-4 w-4 rtl:ml-2 rtl:mr-0 mr-2" />
             {content.delete}
@@ -404,8 +404,8 @@ export function AdminProductEdit() {
       </div>
 
       {errors.general && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-sm text-red-600">{errors.general}</p>
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl dark:bg-red-950/20 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
         </div>
       )}
 
@@ -448,12 +448,12 @@ export function AdminProductEdit() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-primary">
-                {content.category} <span className="text-red-500">*</span>
+                {content.category} <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => handleCategoryChange(e.target.value as Category)}
-                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none dark:bg-surface"
                 required
               >
                 <option value="">{content.selectCategory}</option>
@@ -461,7 +461,7 @@ export function AdminProductEdit() {
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
-              {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
+              {errors.category && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.category}</p>}
             </div>
 
             <div>
@@ -471,7 +471,7 @@ export function AdminProductEdit() {
               <select
                 value={formData.style}
                 onChange={(e) => setFormData(prev => prev ? ({ ...prev, style: e.target.value as Style }) : null)}
-                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none dark:bg-surface"
               >
                 <option value="">{content.selectStyle}</option>
                 {STYLES.map(style => (
@@ -493,7 +493,7 @@ export function AdminProductEdit() {
                   onClick={() => handleColorToggle(color.value)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     formData.colors.includes(color.value)
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white dark:bg-white dark:text-primary'
                       : 'bg-background text-primary hover:bg-primary/10'
                   }`}
                 >
@@ -510,7 +510,7 @@ export function AdminProductEdit() {
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => prev ? ({ ...prev, status: e.target.value as ProductStatus }) : null)}
-              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none sm:max-w-xs"
+              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-primary focus:border-primary focus:outline-none sm:max-w-xs dark:bg-surface"
               aria-label={content.productStatus}
             >
               <option value="active">{content.statusActive}</option>

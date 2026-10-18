@@ -115,7 +115,7 @@ export function ProductDetails() {
 
               <div>
                 <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-primary">{t('product.quantity', language)}</label>
-                <div className="flex items-center border border-border rounded-lg bg-white">
+                <div className="flex items-center border border-border rounded-lg bg-white dark:bg-surface">
                   <button
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}

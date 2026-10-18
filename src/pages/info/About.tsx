@@ -45,7 +45,7 @@ export function About() {
 
         <div className="mt-24 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {values(language).map((value) => (
-            <div key={value.title} className="rounded-2xl bg-white p-6">
+            <div key={value.title} className="rounded-2xl bg-white dark:bg-surface p-6">
               <h3 className="text-lg font-semibold text-primary">{value.title}</h3>
               <p className="mt-2 text-sm text-text-secondary">{value.desc}</p>
             </div>

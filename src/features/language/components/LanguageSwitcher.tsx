@@ -14,7 +14,7 @@ export function LanguageSwitcher() {
   return (
     <button
       onClick={toggleLanguage}
-      className="flex items-center gap-1.5 rounded-full p-2 text-primary hover:bg-black/5 transition-colors"
+      className="flex items-center gap-1.5 rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
       aria-label={t('common.language', language)}
       title={language === 'en' ? 'تغییر به فارسی' : 'Switch to English'}
     >

@@ -22,7 +22,7 @@ export function RecommendationCard({ product, matchScore }: RecommendationCardPr
   return (
     <Link
       to={`/product/${product.slug}`}
-      className="group flex flex-col rounded-2xl bg-white p-3 transition-shadow hover:shadow-lg"
+      className="group flex flex-col rounded-2xl bg-white dark:bg-surface p-3 transition-shadow hover:shadow-lg"
     >
       <div className="relative aspect-square overflow-hidden rounded-xl bg-background">
         <img
