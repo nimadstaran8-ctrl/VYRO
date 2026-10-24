@@ -129,11 +129,14 @@ export function StyleFinder() {
   const visibleStyles = STYLES.filter((s) => aiSettings.enabledStyles.includes(s.value));
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border dark:border-white/10 bg-surface dark:bg-slate-900 p-6 shadow-2xl shadow-cyan-900/10 md:p-10">
+    <div
+      className="relative overflow-hidden rounded-3xl border border-border bg-[url('/images/find-your-vibe-bg.png')] bg-cover bg-center bg-no-repeat p-6 shadow-2xl shadow-cyan-900/10 md:p-10 dark:border-white/10"
+    >
       <div className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -start-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-white/80 dark:bg-black/70" />
 
-      <div className="relative mb-8 flex items-center justify-between">
+      <div className="relative z-10 mb-8 flex items-center justify-between">
         <div className="flex gap-1.5">
           {Array.from({ length: STEP_COUNT }).map((_, i) => (
             <button
@@ -237,7 +240,7 @@ export function StyleFinder() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className="relative"
+            className="relative z-10"
           >
             <ResultsHeader answers={answers} language={language} />
 
@@ -316,7 +319,7 @@ export function StyleFinder() {
       </AnimatePresence>
 
       {step < 5 && (
-        <div className="relative mt-8 flex items-center justify-between">
+        <div className="relative z-10 mt-8 flex items-center justify-between">
           <button
             type="button"
             onClick={prevStep}
@@ -353,6 +356,7 @@ function Step({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -16 }}
       transition={{ duration: 0.25 }}
+      className="relative z-10"
     >
       <h3 className="mb-1 text-xl font-semibold text-primary dark:text-white md:text-2xl">{title}</h3>
       {subtitle && <p className="mb-6 text-sm text-text-secondary dark:text-slate-400">{subtitle}</p>}
