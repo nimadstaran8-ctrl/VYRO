@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { StyleFinder } from '../../features/style-finder/components/StyleFinder';
 import { useStyleFinderStore } from '../../features/style-finder/store/styleFinderStore';
 import { useLanguageStore } from '../../stores/languageStore';
@@ -11,10 +11,10 @@ import { getUsdToTomanRate, setUsdToTomanRate } from '../../services/currency';
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: Record<string, unknown>) =>
+    div: ({ children, ...props }: Record<string, unknown> & { children?: ReactNode }) =>
       createElement('div', props, children),
   },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  AnimatePresence: ({ children }: { children: ReactNode }) => children,
 }));
 
 const SETTINGS_STORAGE_KEY = 'vyro_settings';
