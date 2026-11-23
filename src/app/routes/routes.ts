@@ -60,11 +60,7 @@ function guard(Page: React.ComponentType): React.ComponentType {
   };
 }
 
-/**
- * Sign-in gate for storefront pages: visitors must register and log in to
- * browse. The admin (store owner) is exempt while signed into the admin
- * panel in the same browser session — see RequireAuth.
- */
+/** Sign-in gate for checkout and invoices. */
 function userGuard(Page: React.ComponentType): React.ComponentType {
   return function UserGuardedPage() {
     return createElement(
@@ -76,24 +72,24 @@ function userGuard(Page: React.ComponentType): React.ComponentType {
 }
 
 export const routeConfig: RouteConfig[] = [
-  { path: ROUTES.HOME, Element: userGuard(Home) },
-  { path: ROUTES.SHOP, Element: userGuard(Shop) },
-  { path: ROUTES.HATS, Element: userGuard(Hats) },
-  { path: ROUTES.GLASSES, Element: userGuard(Glasses) },
-  { path: ROUTES.PRODUCT, Element: userGuard(ProductDetails) },
-  { path: ROUTES.STYLE_FINDER, Element: userGuard(StyleFinder) },
-  { path: ROUTES.WISHLIST, Element: userGuard(Wishlist) },
-  { path: ROUTES.CART, Element: userGuard(Cart) },
+  { path: ROUTES.HOME, Element: Home },
+  { path: ROUTES.SHOP, Element: Shop },
+  { path: ROUTES.HATS, Element: Hats },
+  { path: ROUTES.GLASSES, Element: Glasses },
+  { path: ROUTES.PRODUCT, Element: ProductDetails },
+  { path: ROUTES.STYLE_FINDER, Element: StyleFinder },
+  { path: ROUTES.WISHLIST, Element: Wishlist },
+  { path: ROUTES.CART, Element: Cart },
   { path: ROUTES.CHECKOUT, Element: userGuard(Checkout) },
   { path: ROUTES.INVOICE, Element: userGuard(Invoice) },
-  { path: ROUTES.SEARCH, Element: userGuard(SearchResults) },
-  { path: ROUTES.ABOUT, Element: userGuard(About) },
-  { path: ROUTES.CONTACT, Element: userGuard(Contact) },
-  { path: ROUTES.FAQ, Element: userGuard(FAQ) },
-  { path: ROUTES.SHIPPING, Element: userGuard(Shipping) },
-  { path: ROUTES.RETURNS, Element: userGuard(Returns) },
-  { path: ROUTES.PRIVACY, Element: userGuard(Privacy) },
-  { path: ROUTES.TERMS, Element: userGuard(Terms) },
+  { path: ROUTES.SEARCH, Element: SearchResults },
+  { path: ROUTES.ABOUT, Element: About },
+  { path: ROUTES.CONTACT, Element: Contact },
+  { path: ROUTES.FAQ, Element: FAQ },
+  { path: ROUTES.SHIPPING, Element: Shipping },
+  { path: ROUTES.RETURNS, Element: Returns },
+  { path: ROUTES.PRIVACY, Element: Privacy },
+  { path: ROUTES.TERMS, Element: Terms },
   { path: ROUTES.LOGIN, Element: Login },
   { path: ROUTES.REGISTER, Element: Register },
   { path: ROUTES.FORGOT_PASSWORD, Element: ForgotPassword },
@@ -120,5 +116,5 @@ export const routeConfig: RouteConfig[] = [
       { path: 'logs', Element: guard(AdminLogs) },
     ],
   },
-  { path: ROUTES.NOT_FOUND, Element: userGuard(NotFound) },
+  { path: ROUTES.NOT_FOUND, Element: NotFound },
 ];

@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/ui/SEO';
 import { Button } from '../../components/ui/Button';
 import { useLanguageStore } from '../../stores/languageStore';
 import type { Language } from '../../lib/i18n';
-import type { Order } from '../../types/order';
 import { getOrderById } from '../../services/orders';
 import { formatProductPrice } from '../../services/currency';
 import { getPaymentSettings } from '../../services/settings';
@@ -21,16 +20,10 @@ function formatOrderDate(date: string, language: Language): string {
 
 export function Invoice() {
   const { id } = useParams<{ id: string }>();
+  const order = getOrderById(id ?? '');
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
-  const [order, setOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [paymentSettings] = useState(() => getPaymentSettings());
-
-  useEffect(() => {
-    setOrder(getOrderById(id || '') || null);
-    setIsLoading(false);
-  }, [id]);
 
   const content = {
     title: language === 'fa' ? 'فاکتور فروش' : 'Sales Invoice',
@@ -64,14 +57,6 @@ export function Invoice() {
         ? 'این فاکتور به‌صورت الکترونیکی تولید شده است و مهر و امضای فیزیکی ندارد.'
         : 'This invoice is generated electronically and carries no physical stamp or signature.',
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   if (!order) {
     return (

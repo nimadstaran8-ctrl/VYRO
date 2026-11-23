@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, ScrollText, Trash2 } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
@@ -16,14 +16,10 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 export function AdminLogs() {
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
-  const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
+  const [logs, setLogs] = useState<ActivityLogEntry[]>(getActivityLogs);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<ActivityLogType | ''>('');
   const [clearConfirm, setClearConfirm] = useState(false);
-
-  useEffect(() => {
-    setLogs(getActivityLogs());
-  }, []);
 
   const filteredLogs = useMemo(() => {
     let result = logs;

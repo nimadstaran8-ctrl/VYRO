@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Package, MapPin, CreditCard, Mail, Phone, CheckCircle2, XCircle, ReceiptText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
-import type { Order, OrderStatus } from '../../types/order';
+import type { OrderStatus } from '../../types/order';
 import {
   getOrderById,
   updateOrderStatus,
@@ -18,19 +18,16 @@ import { ORDER_STATUSES, getOrderStatusLabel, getOrderStatusColor } from '../../
 
 export function AdminOrderDetail() {
   const { id } = useParams<{ id: string }>();
+  return <OrderDetail key={id} id={id} />;
+}
+
+function OrderDetail({ id }: { id?: string }) {
+  const [order, setOrder] = useState(() => getOrderById(id ?? ''));
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
-  const [order, setOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [rejectConfirm, setRejectConfirm] = useState(false);
-
-  useEffect(() => {
-    const found = getOrderById(id || '');
-    setOrder(found || null);
-    setIsLoading(false);
-  }, [id]);
 
   const handleStatusUpdate = (newStatus: OrderStatus) => {
     if (!order || isUpdating) return;
@@ -45,7 +42,7 @@ export function AdminOrderDetail() {
         : updateOrderStatus(order.id, newStatus);
 
     if (result.success) {
-      setOrder({ ...order, status: newStatus });
+      setOrder(getOrderById(order.id));
     } else {
       setUpdateError(result.error || (language === 'fa' ? 'خطا در به‌روزرسانی وضعیت' : 'Failed to update status'));
     }
@@ -61,7 +58,7 @@ export function AdminOrderDetail() {
     const result = confirmOrderPayment(order.id);
 
     if (result.success) {
-      setOrder({ ...order, status: 'paid' });
+      setOrder(getOrderById(order.id));
     } else {
       setUpdateError(result.error || (language === 'fa' ? 'خطا در تأیید پرداخت' : 'Failed to confirm payment'));
     }
@@ -77,7 +74,7 @@ export function AdminOrderDetail() {
     const result = rejectOrderPayment(order.id);
 
     if (result.success) {
-      setOrder({ ...order, status: 'cancelled' });
+      setOrder(getOrderById(order.id));
       setRejectConfirm(false);
     } else {
       setUpdateError(result.error || (language === 'fa' ? 'خطا در رد پرداخت' : 'Failed to reject payment'));
@@ -86,14 +83,6 @@ export function AdminOrderDetail() {
 
     setIsUpdating(false);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   if (!order) {
     return (

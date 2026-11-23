@@ -14,11 +14,12 @@ export interface UploadedImage {
 
 interface ImageUploadProps {
   images: UploadedImage[];
+  savedImageIds?: string[];
   onImagesChange: (images: UploadedImage[]) => void;
   error?: string;
 }
 
-export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps) {
+export function ImageUpload({ images, savedImageIds, onImagesChange, error }: ImageUploadProps) {
   const language = useLanguageStore((state) => state.language);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -27,14 +28,15 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const invalidFile = language === 'fa' ? 'فایل نامعتبر است' : 'Invalid file';
+  const failedToStore = language === 'fa' ? 'خطا در ذخیره تصویر' : 'Failed to store image';
+
   const content = {
     productImages: t('admin.productImages', language),
     uploadImages: t('admin.uploadImages', language),
     clickToUpload: t('admin.clickToUpload', language),
     dragDropFiles: t('admin.dragDropFiles', language),
     uploading: t('admin.uploading', language),
-    invalidFile: language === 'fa' ? 'فایل نامعتبر است' : 'Invalid file',
-    failedToStore: language === 'fa' ? 'خطا در ذخیره تصویر' : 'Failed to store image',
     imagesUploaded: language === 'fa' ? 'تصویر آپلود شد' : 'images uploaded',
     primarySelected: t('admin.primaryImageSelected', language),
     confirmDelete: language === 'fa' ? 'آیا مطمئن هستید که می‌خواهید این تصویر را حذف کنید؟' : 'Are you sure you want to delete this image?',
@@ -50,24 +52,28 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
     setUploadError(null);
 
     if (targetIndex !== undefined && targetIndex !== null) {
+      const existingImage = images[targetIndex];
+      if (!existingImage) return;
+
       const file = files[0];
       const validation = validateImageFile(file);
 
       if (!validation.valid) {
-        setUploadError(validation.error || content.invalidFile);
+        setUploadError(validation.error || invalidFile);
         return;
       }
 
-      const existingImage = images[targetIndex];
       const newId = generateImageId();
       const result = await imageStorage.add(newId, file);
 
       if (!result.success) {
-        setUploadError(result.error || content.failedToStore);
+        setUploadError(result.error || failedToStore);
         return;
       }
 
-      imageStorage.delete(existingImage.id);
+      if (!savedImageIds?.includes(existingImage.id)) {
+        imageStorage.delete(existingImage.id);
+      }
 
       const updatedImages = images.map((img, idx) =>
         idx === targetIndex
@@ -88,7 +94,7 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
       const validation = validateImageFile(file);
 
       if (!validation.valid) {
-        setUploadError(validation.error || content.invalidFile);
+        setUploadError(validation.error || invalidFile);
         continue;
       }
 
@@ -96,7 +102,7 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
       const result = await imageStorage.add(id, file);
 
       if (!result.success) {
-        setUploadError(result.error || content.failedToStore);
+        setUploadError(result.error || failedToStore);
         continue;
       }
 
@@ -115,7 +121,7 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
       }
       onImagesChange([...images, ...newImages]);
     }
-  }, [images, onImagesChange, content]);
+  }, [images, savedImageIds, onImagesChange, invalidFile, failedToStore]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -153,7 +159,7 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
     if (!deleteConfirm) return;
 
     const imageToRemove = images.find(img => img.id === deleteConfirm);
-    if (imageToRemove) {
+    if (imageToRemove && !savedImageIds?.includes(deleteConfirm)) {
       imageStorage.delete(deleteConfirm);
     }
 
@@ -167,7 +173,7 @@ export function ImageUpload({ images, onImagesChange, error }: ImageUploadProps)
 
     onImagesChange(remaining);
     setDeleteConfirm(null);
-  }, [deleteConfirm, images, onImagesChange]);
+  }, [deleteConfirm, images, savedImageIds, onImagesChange]);
 
   const cancelDelete = useCallback(() => {
     setDeleteConfirm(null);

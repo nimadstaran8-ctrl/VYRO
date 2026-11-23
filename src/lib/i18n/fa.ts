@@ -58,6 +58,7 @@ export const fa = {
     search: 'جستجو',
     admin: 'پنل مدیریت',
     login: 'ورود',
+    loginOrRegister: 'ورود / ثبت‌نام',
     logout: 'خروج',
     account: 'حساب کاربری',
     quickLinks: 'دسترسی سریع',

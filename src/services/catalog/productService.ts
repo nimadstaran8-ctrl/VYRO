@@ -14,26 +14,26 @@ function isExternalUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
 }
 
-function resolveImageId(imgId: string): string {
+export function resolveProductImage(imgId: string): string {
   if (!imgId) return FALLBACK_IMAGE;
 
   const storedUrl = imageStorage.getUrl(imgId);
   if (storedUrl) {
     return storedUrl;
   }
-  if (isExternalUrl(imgId)) {
+  if (isExternalUrl(imgId) || imgId.startsWith('img_') || imgId.startsWith('blob:')) {
     return FALLBACK_IMAGE;
   }
-  return imgId || FALLBACK_IMAGE;
+  return imgId;
 }
 
 function resolveProductImages(product: Product): Product {
   const resolvedImages = product.images
-    .map(resolveImageId)
+    .map(resolveProductImage)
     .filter(Boolean);
 
   const resolvedPrimaryImage = product.primaryImage
-    ? resolveImageId(product.primaryImage)
+    ? resolveProductImage(product.primaryImage)
     : resolvedImages[0] || FALLBACK_IMAGE;
 
   return {
@@ -99,9 +99,14 @@ export function getProducts(): Product[] {
 }
 
 export function getProductById(id: string): Product | undefined {
-  initializeProductData();
-  const product = productData.find((p) => p.id === id);
+  const product = getProductForEditing(id);
   return product ? resolveProductImages(product) : undefined;
+}
+
+/** Returns persisted image references for the admin editor. */
+export function getProductForEditing(id: string): Product | undefined {
+  initializeProductData();
+  return productData.find(product => product.id === id);
 }
 
 export function getProductBySlug(slug: string): Product | undefined {

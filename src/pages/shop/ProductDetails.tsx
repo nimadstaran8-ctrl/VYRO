@@ -22,17 +22,18 @@ export function ProductDetails() {
   const navigate = useNavigate();
   const product = getProductBySlug(slug || '');
   const { addItem } = useCartStore();
-  const { addItem: addRecentlyViewed } = useRecentlyViewedStore();
+  const addRecentlyViewed = useRecentlyViewedStore(state => state.addItem);
+  const productId = product?.id;
   const language = useLanguageStore((state) => state.language);
 
   const [color, setColor] = useState(product?.colors[0] || '');
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    if (product) {
-      addRecentlyViewed(product.id);
+    if (productId) {
+      addRecentlyViewed(productId);
     }
-  }, [product, addRecentlyViewed]);
+  }, [productId, addRecentlyViewed]);
 
   if (!product) {
     return (

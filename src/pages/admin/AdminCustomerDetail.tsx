@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail, Phone, ShoppingBag, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t, type Language } from '../../lib/i18n';
-import { getCustomerById, deleteCustomer, type Customer } from '../../services/customers';
+import { getCustomerById, deleteCustomer } from '../../services/customers';
 import { getOrdersByCustomerEmail } from '../../services/orders';
 import { formatProductPrice } from '../../services/currency';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -13,19 +13,12 @@ import type { Order } from '../../types/order';
 
 export function AdminCustomerDetail() {
   const { id } = useParams<{ id: string }>();
+  const customer = getCustomerById(id ?? '');
   const navigate = useNavigate();
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const found = getCustomerById(id || '');
-    setCustomer(found || null);
-    setIsLoading(false);
-  }, [id]);
 
   const handleDelete = () => {
     if (!customer) return;
@@ -37,14 +30,6 @@ export function AdminCustomerDetail() {
       setShowDeleteConfirm(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   if (!customer) {
     return (

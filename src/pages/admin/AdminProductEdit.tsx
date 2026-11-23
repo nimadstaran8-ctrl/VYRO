@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input, Textarea } from '../../components/ui/Input';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { ImageUpload, type UploadedImage } from '../../features/admin/components/ImageUpload';
-import { getProductById, updateProduct, deleteProduct } from '../../services/catalog/productService';
+import { getProductForEditing, resolveProductImage, updateProduct, deleteProduct } from '../../services/catalog/productService';
 import { imageStorage } from '../../features/admin/services/imageStorage';
 import { subscribeToImageStoreChanges } from '../../lib/imageEvents';
 import { CATEGORIES, STYLES, COLORS } from '../../constants/product';
@@ -50,17 +50,47 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
+function getInitialImages(product: Product): UploadedImage[] {
+  const imageIds = product.images.filter(Boolean);
+  const primaryImage = imageIds.find(id => id === product.primaryImage) ?? imageIds[0];
+
+  return imageIds.map(id => ({
+    id,
+    dataUrl: resolveProductImage(id),
+    isPrimary: id === primaryImage,
+  }));
+}
+
 export function AdminProductEdit() {
   const { id } = useParams<{ id: string }>();
+  return <ProductEditor key={id} id={id} />;
+}
+
+function ProductEditor({ id }: { id?: string }) {
   const navigate = useNavigate();
+  const [product] = useState(() => getProductForEditing(id ?? ''));
   const language = useLanguageStore((state) => state.language);
-  const [formData, setFormData] = useState<FormData | null>(null);
-  const [images, setImages] = useState<UploadedImage[]>([]);
-  const [originalImages, setOriginalImages] = useState<string[]>([]);
+  const [formData, setFormData] = useState<FormData | null>(() => product ? ({
+    name: product.name,
+    slug: product.slug,
+    description: product.description,
+    price: product.priceUSD.toString(),
+    oldPrice: product.oldPriceUSD?.toString() || '',
+    category: product.category,
+    style: product.style,
+    colors: product.colors,
+    sizes: product.sizes.join(', '),
+    stock: product.stock.toString(),
+    tags: product.tags.join(', '),
+    status: product.status ?? 'active',
+    featured: product.featured,
+    isNew: product.isNew || false,
+    isBestSeller: product.isBestSeller || false,
+    isLimited: product.isLimited || false,
+  }) : null);
+  const [images, setImages] = useState<UploadedImage[]>(() => product ? getInitialImages(product) : []);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currencyState, setCurrencyState] = useState(getCurrencyState());
 
@@ -129,67 +159,9 @@ export function AdminProductEdit() {
     deleteError: t('admin.deleteError', language),
   };
 
-  useEffect(() => {
-    const product = getProductById(id || '');
-
-    if (!product) {
-      setNotFound(true);
-      setIsLoading(false);
-      return;
-    }
-
-    const resolvedPrimaryImage = product.primaryImage || product.images[0] || '';
-
-    const storedImages: UploadedImage[] = product.images
-      .map((imgUrl, idx) => {
-        const isPrimary = imgUrl === resolvedPrimaryImage || idx === 0;
-        return {
-          id: imgUrl,
-          dataUrl: imgUrl,
-          isPrimary,
-        };
-      })
-      .filter((img): img is UploadedImage => !!img.dataUrl);
-
-    if (storedImages.length > 0 && !storedImages.some(img => img.isPrimary)) {
-      storedImages[0].isPrimary = true;
-    }
-
-    setFormData({
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      price: product.priceUSD.toString(),
-      oldPrice: product.oldPriceUSD?.toString() || '',
-      category: product.category,
-      style: product.style,
-      colors: product.colors,
-      sizes: product.sizes.join(', '),
-      stock: product.stock.toString(),
-      tags: product.tags.join(', '),
-      status: product.status ?? 'active',
-      featured: product.featured,
-      isNew: product.isNew || false,
-      isBestSeller: product.isBestSeller || false,
-      isLimited: product.isLimited || false,
-    });
-
-    setImages(storedImages);
-    setOriginalImages(product.images);
-    setIsLoading(false);
-  }, [id]);
-
-  // Product images resolve asynchronously from IndexedDB — refresh only the
-  // image previews when the store hydrates or changes, keeping form edits.
-  useEffect(() => {
-    const resolveUrl = (imgId: string) =>
-      imageStorage.getUrl(imgId) ??
-      (imgId.startsWith('img_') ? '/images/site/fallback.svg' : imgId);
-
-    return subscribeToImageStoreChanges(() => {
-      setImages(prev => prev.map(img => ({ ...img, dataUrl: resolveUrl(img.id) })));
-    });
-  }, []);
+  useEffect(() => subscribeToImageStoreChanges(() => {
+    setImages(prev => prev.map(img => ({ ...img, dataUrl: resolveProductImage(img.id) })));
+  }), []);
 
   const handleNameChange = useCallback((name: string) => {
     if (!formData) return;
@@ -275,7 +247,7 @@ export function AdminProductEdit() {
     setErrors({});
 
     try {
-      const sortedImages = images
+      const sortedImages = [...images]
         .sort((a, b) => (a.isPrimary ? -1 : b.isPrimary ? 1 : 0));
       const productImages = sortedImages.map(img => img.id);
       const primaryImage = sortedImages[0]?.id || '';
@@ -290,7 +262,7 @@ export function AdminProductEdit() {
         .map(s => s.trim())
         .filter(Boolean);
 
-      const existingProduct = getProductById(id);
+      const existingProduct = getProductForEditing(id);
       if (!existingProduct) {
         setErrors({ general: content.productNotFound });
         setIsSaving(false);
@@ -327,7 +299,7 @@ export function AdminProductEdit() {
         return;
       }
 
-      originalImages.forEach(imgId => {
+      product?.images.forEach(imgId => {
         if (!productImages.includes(imgId) && imgId.startsWith('img_')) {
           imageStorage.delete(imgId);
         }
@@ -346,9 +318,10 @@ export function AdminProductEdit() {
     const result = deleteProduct(id);
 
     if (result.success) {
-      images.forEach(img => {
-        if (img.id.startsWith('img_')) {
-          imageStorage.delete(img.id);
+      const imageIds = new Set([...(product?.images ?? []), ...images.map(img => img.id)]);
+      imageIds.forEach(imgId => {
+        if (imgId.startsWith('img_')) {
+          imageStorage.delete(imgId);
         }
       });
       navigate('/admin/products');
@@ -358,15 +331,7 @@ export function AdminProductEdit() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (notFound || !formData) {
+  if (!formData) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-primary">{content.productNotFound}</h1>
@@ -651,6 +616,7 @@ export function AdminProductEdit() {
 
         <div className="rounded-2xl bg-surface p-6 shadow-sm">
           <ImageUpload
+            savedImageIds={product?.images}
             images={images}
             onImagesChange={setImages}
             error={errors.images}

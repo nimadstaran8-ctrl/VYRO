@@ -15,6 +15,7 @@ import { useAdminSession } from '../../features/admin/hooks/useAdminSession';
 import { useLanguageStore } from '../../stores/languageStore';
 import { cn } from '../../lib/utils';
 import { t } from '../../lib/i18n';
+import { ROUTES } from '../../constants/routes';
 
 const navLinks = [
   { label: 'nav.shop', href: '/shop' },
@@ -159,12 +160,11 @@ export function Header() {
               </div>
             ) : (
               <Link
-                to="/login"
-                className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
-                aria-label={t('nav.login', language)}
-                title={t('nav.login', language)}
+                to={ROUTES.LOGIN}
+                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-2.5 py-2 text-xs font-medium text-primary hover:bg-surface sm:px-3 sm:text-sm"
               >
-                <User size={20} />
+                <User size={16} className="hidden sm:block" aria-hidden="true" />
+                {t('nav.loginOrRegister', language)}
               </Link>
             )}
           </div>
@@ -253,12 +253,12 @@ export function Header() {
                     </button>
                   ) : (
                     <Link
-                      to="/login"
+                      to={ROUTES.LOGIN}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex flex-col items-center gap-1 text-sm text-primary"
                     >
                       <User size={20} />
-                      {t('nav.login', language)}
+                      {t('nav.loginOrRegister', language)}
                     </Link>
                   )}
                   <button

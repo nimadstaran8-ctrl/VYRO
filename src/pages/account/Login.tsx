@@ -34,7 +34,7 @@ export function Login() {
 
   const content = {
     title: language === 'fa' ? 'ورود به حساب کاربری' : 'Sign In',
-    subtitle: language === 'fa' ? 'برای مشاهده فروشگاه وارد شوید' : 'Sign in to browse the store',
+    subtitle: language === 'fa' ? 'برای تکمیل خرید و مشاهدهٔ فاکتور وارد شوید' : 'Sign in to check out and view invoices',
     username: language === 'fa' ? 'نام کاربری' : 'Username',
     password: language === 'fa' ? 'رمز عبور' : 'Password',
     login: language === 'fa' ? 'ورود' : 'Sign In',

@@ -6,14 +6,7 @@ interface RequireAuthProps {
   children: React.ReactNode;
 }
 
-/**
- * Client-side gate for storefront pages. Visitors must register and sign in
- * before they can browse. The store owner is exempt: once signed into the
- * admin panel (same browser session/tab), the gate lets them through so
- * browsing their own store never asks them to register.
- *
- * UI-level only — not a security boundary (see userAuth.ts / adminAuth.ts).
- */
+/** Requires a customer or admin session for checkout and invoices. */
 export function RequireAuth({ children }: RequireAuthProps) {
   const location = useLocation();
 

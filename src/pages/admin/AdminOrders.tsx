@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, ShoppingCart } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
@@ -13,11 +13,7 @@ export function AdminOrders() {
   const language = lang as Language;
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
-  const [orders, setOrders] = useState<Order[]>([]);
-
-  useEffect(() => {
-    setOrders(getOrders());
-  }, []);
+  const [orders] = useState<Order[]>(getOrders);
 
   const filteredOrders = useMemo(() => {
     let result = orders;

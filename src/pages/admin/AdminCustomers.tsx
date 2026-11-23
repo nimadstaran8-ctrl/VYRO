@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, Users, Trash2 } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
@@ -12,13 +12,9 @@ export function AdminCustomers() {
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
   const [search, setSearch] = useState('');
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(getCustomers);
   const [deleteConfirm, setDeleteConfirm] = useState<Customer | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCustomers(getCustomers());
-  }, []);
 
   const filteredCustomers = useMemo(() => {
     if (!search.trim()) return customers;

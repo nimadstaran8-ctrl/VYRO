@@ -58,6 +58,7 @@ export const en = {
     search: 'Search',
     admin: 'Admin Panel',
     login: 'Sign In',
+    loginOrRegister: 'Sign in / Register',
     logout: 'Sign Out',
     account: 'Account',
     quickLinks: 'Quick Links',
