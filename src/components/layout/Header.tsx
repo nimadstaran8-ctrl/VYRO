@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Heart, ShoppingBag, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Search, Heart, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
-import { useCartStore } from '../../stores/cartStore';
 import { useWishlistStore } from '../../stores/wishlistStore';
 import { SearchModal } from '../search/SearchModal';
 import { LanguageSwitcher } from '../../features/language/components/LanguageSwitcher';
@@ -28,7 +27,6 @@ export function Header() {
   const { isScrolled } = useScrollPosition();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { toggleCart, getTotalItems } = useCartStore();
   const { items: wishlistItems } = useWishlistStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,8 +35,6 @@ export function Header() {
   const adminSession = useAdminSession();
 
   useLockBodyScroll(mobileMenuOpen);
-
-  const cartCount = getTotalItems();
 
   return (
     <>
@@ -49,21 +45,20 @@ export function Header() {
           'dark:bg-background/90 dark:backdrop-blur-md'
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-2 sm:px-6 lg:px-8">
-          {/* Mobile menu button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 lg:hidden"
-            aria-label="Open menu"
-          >
-            <Menu size={22} />
-          </button>
-
-          {/* Logo */}
-          <Link to="/" className="text-2xl font-bold tracking-tight text-primary md:text-3xl">
-            VYRO
-          </Link>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-2 sm:px-6 lg:px-8 rtl:max-w-none rtl:ps-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <Link to="/" className="text-2xl font-bold tracking-tight text-primary md:text-3xl">
+              VYRO
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 lg:hidden"
+              aria-label="Open menu"
+            >
+              <Menu size={22} />
+            </button>
+          </div>
 
           {/* Desktop navigation */}
           <nav className="hidden items-center gap-8 lg:flex">
@@ -111,21 +106,6 @@ export function Header() {
                 </span>
               )}
             </Link>
-            <button
-              type="button"
-              onClick={() => {
-                toggleCart();
-              }}
-              className="relative rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
-              aria-label={t('nav.cart', language)}
-            >
-              <ShoppingBag size={20} />
-              {cartCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-primary">
-                  {cartCount}
-                </span>
-              )}
-            </button>
             {adminSession && (
               <Link
                 to="/admin"
@@ -161,11 +141,11 @@ export function Header() {
             ) : (
               <Link
                 to={ROUTES.LOGIN}
-                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-2.5 py-2 text-xs font-medium text-primary hover:bg-surface sm:px-3 sm:text-sm"
+                className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
                 aria-label={t('nav.loginOrRegister', language)}
+                title={t('nav.loginOrRegister', language)}
               >
-                <User size={16} className="min-[400px]:hidden sm:block" aria-hidden="true" />
-                <span className="hidden min-[400px]:inline">{t('nav.loginOrRegister', language)}</span>
+                <User size={20} aria-hidden="true" />
               </Link>
             )}
           </div>
@@ -256,23 +236,13 @@ export function Header() {
                     <Link
                       to={ROUTES.LOGIN}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex flex-col items-center gap-1 text-sm text-primary"
+                      className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
+                      aria-label={t('nav.loginOrRegister', language)}
+                      title={t('nav.loginOrRegister', language)}
                     >
-                      <User size={20} />
-                      {t('nav.loginOrRegister', language)}
+                      <User size={20} aria-hidden="true" />
                     </Link>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      toggleCart();
-                    }}
-                    className="flex flex-col items-center gap-1 text-sm text-primary"
-                  >
-                    <ShoppingBag size={20} />
-                    {t('nav.cart', language)}
-                  </button>
                 </div>
               </div>
             </motion.div>

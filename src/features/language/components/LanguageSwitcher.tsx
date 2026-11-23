@@ -13,15 +13,13 @@ export function LanguageSwitcher() {
 
   return (
     <button
+      type="button"
       onClick={toggleLanguage}
-      className="flex items-center gap-1.5 rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+      className="inline-flex items-center rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
       aria-label={t('common.language', language)}
       title={language === 'en' ? 'تغییر به فارسی' : 'Switch to English'}
     >
-      <Globe className="h-5 w-5" />
-      <span className="text-xs font-medium">
-        {language === 'en' ? 'FA' : 'EN'}
-      </span>
+      <Globe className="h-5 w-5" aria-hidden="true" />
     </button>
   );
 }

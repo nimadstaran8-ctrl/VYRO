@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { ArrowLeft, ArrowRight, RefreshCw, Sparkles, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStyleFinderStore } from '../store/styleFinderStore';
@@ -10,8 +10,10 @@ import { AIStylistRecommendationCard } from './AIStylistRecommendationCard';
 import { OutfitSetCard } from './OutfitSetCard';
 import { useLanguageStore } from '../../../stores/languageStore';
 import { t } from '../../../lib/i18n';
-import { getRelaxationHintMessage } from '../services/recommendationEngine';
+import { getBudgetRange, getRelaxationHintMessage } from '../services/recommendationEngine';
 import type { StyleFinderAnswers } from '../types';
+import { calculateRialFromUsd } from '../../../config/currency';
+import { getUsdToTomanRate, subscribeToCurrency } from '../../../services/currency';
 import { STYLES, COLORS } from '../../../constants/product';
 import type { Color, Style } from '../../../types';
 
@@ -40,12 +42,21 @@ const colorLabels = (lang: 'fa' | 'en'): Record<Color, string> => ({
   Gold: lang === 'fa' ? 'طلایی' : 'Gold',
 });
 
-const budgets = (lang: 'fa' | 'en'): { value: Budget; label: string }[] => [
-  { value: 'under-30', label: lang === 'fa' ? 'زیر ۳۰ دلار' : 'Under $30' },
-  { value: '30-60', label: lang === 'fa' ? '۳۰ تا ۶۰ دلار' : '$30–$60' },
-  { value: '60-100', label: lang === 'fa' ? '۶۰ تا ۱۰۰ دلار' : '$60–$100' },
-  { value: '100-plus', label: lang === 'fa' ? 'بالای ۱۰۰ دلار' : '$100+' },
-];
+const budgetOptions: Budget[] = ['under-30', '30-60', '60-100', '100-plus'];
+
+function formatBudget(budget: Budget, language: 'fa' | 'en', rate: number): string {
+  const [min, max] = getBudgetRange(budget);
+  const numberFormat = new Intl.NumberFormat(language === 'fa' ? 'fa-IR' : 'en-US');
+  const rial = (usd: number) => numberFormat.format(calculateRialFromUsd(usd, rate));
+
+  if (budget === 'under-30') {
+    return language === 'fa' ? `زیر ${rial(max)} ریال` : `Under ${rial(max)} IRR`;
+  }
+  if (budget === '100-plus') {
+    return language === 'fa' ? `${rial(min)} ریال و بیشتر` : `${rial(min)} IRR and above`;
+  }
+  return language === 'fa' ? `${rial(min)} تا ${rial(max)} ریال` : `${rial(min)}–${rial(max)} IRR`;
+}
 
 const occasions = (lang: 'fa' | 'en'): { value: Occasion; label: string }[] => [
   { value: 'everyday', label: lang === 'fa' ? 'روزمره' : 'Everyday' },
@@ -76,6 +87,7 @@ export function StyleFinder() {
   } = useStyleFinderStore();
 
   const language = useLanguageStore((state) => state.language);
+  const rate = useSyncExternalStore(subscribeToCurrency, getUsdToTomanRate, getUsdToTomanRate);
   const aiSettings = getAIStylistSettings();
 
   const isAdvancingRef = useRef(false);
@@ -222,12 +234,12 @@ export function StyleFinder() {
         {step === 4 && (
           <Step key="step4" title={stepTitles[4]} subtitle={t('aiStylist.budgetSubtitle', language)}>
             <div className="grid grid-cols-2 gap-3">
-              {budgets(language).map((b) => (
+              {budgetOptions.map((budget) => (
                 <OptionCard
-                  key={b.value}
-                  label={b.label}
-                  selected={answers.budget === b.value}
-                  onClick={() => handleSingleSelect(setBudget, b.value)}
+                  key={budget}
+                  label={formatBudget(budget, language, rate)}
+                  selected={answers.budget === budget}
+                  onClick={() => handleSingleSelect(setBudget, budget)}
                 />
               ))}
             </div>
@@ -242,7 +254,11 @@ export function StyleFinder() {
             exit={{ opacity: 0, y: -16 }}
             className="relative z-10"
           >
-            <ResultsHeader answers={answers} language={language} />
+            <ResultsHeader
+              answers={answers}
+              language={language}
+              budgetLabel={answers.budget ? formatBudget(answers.budget, language, rate) : undefined}
+            />
 
             {relaxationHints.length > 0 && (
               <div className="mb-6 rounded-xl border border-amber-400/20 bg-amber-950/20 p-4">
@@ -393,16 +409,15 @@ function OptionCard({
 function ResultsHeader({
   answers,
   language,
+  budgetLabel,
 }: {
   answers: StyleFinderAnswers;
   language: 'fa' | 'en';
+  budgetLabel?: string;
 }) {
   const styleLabel = answers.style ? styleLabels(language)[answers.style] : undefined;
   const shoppingLabel = answers.shoppingFor
     ? shoppingForOptions(language).find((o) => o.value === answers.shoppingFor)?.label
-    : undefined;
-  const budgetLabel = answers.budget
-    ? budgets(language).find((b) => b.value === answers.budget)?.label
     : undefined;
   const occasionLabel = answers.occasion
     ? occasions(language).find((o) => o.value === answers.occasion)?.label

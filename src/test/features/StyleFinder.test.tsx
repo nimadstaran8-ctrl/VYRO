@@ -5,6 +5,7 @@ import { act } from 'react';
 import { StyleFinder } from '../../features/style-finder/components/StyleFinder';
 import { useStyleFinderStore } from '../../features/style-finder/store/styleFinderStore';
 import { useLanguageStore } from '../../stores/languageStore';
+import { getUsdToTomanRate, setUsdToTomanRate } from '../../services/currency';
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -102,6 +103,26 @@ describe('StyleFinder component', () => {
       (button) => button.getAttribute('aria-pressed') === 'true'
     );
     expect(selectedButton?.textContent).toBe('Streetwear');
+  });
+
+  it('updates the Persian rial budget options when the store rate changes', async () => {
+    const originalRate = getUsdToTomanRate();
+    try {
+      await act(async () => {
+        useLanguageStore.setState({ language: 'fa' });
+        useStyleFinderStore.getState().goToStep(4);
+        setUsdToTomanRate(200_000);
+        root = createRoot(container);
+        root.render(createElement(StyleFinder));
+      });
+      expect(container.textContent).toContain('۶۰٬۰۰۰٬۰۰۰ ریال');
+
+      await act(async () => setUsdToTomanRate(230_000));
+      expect(container.textContent).toContain('۶۹٬۰۰۰٬۰۰۰ ریال');
+      expect(container.textContent).not.toContain('دلار');
+    } finally {
+      await act(async () => setUsdToTomanRate(originalRate));
+    }
   });
 
   it('allows multiple selections on the colors step without advancing', async () => {
