@@ -49,7 +49,7 @@ export function Header() {
           'dark:bg-background/90 dark:backdrop-blur-md'
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-2 sm:px-6 lg:px-8">
           {/* Mobile menu button */}
           <button
             type="button"
@@ -129,7 +129,7 @@ export function Header() {
             {adminSession && (
               <Link
                 to="/admin"
-                className="rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10"
+                className="hidden rounded-full p-2 text-primary hover:bg-black/5 dark:hover:bg-white/10 min-[400px]:block"
                 aria-label={t('nav.admin', language)}
                 title={t('nav.admin', language)}
               >
@@ -162,9 +162,10 @@ export function Header() {
               <Link
                 to={ROUTES.LOGIN}
                 className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-2.5 py-2 text-xs font-medium text-primary hover:bg-surface sm:px-3 sm:text-sm"
+                aria-label={t('nav.loginOrRegister', language)}
               >
-                <User size={16} className="hidden sm:block" aria-hidden="true" />
-                {t('nav.loginOrRegister', language)}
+                <User size={16} className="min-[400px]:hidden sm:block" aria-hidden="true" />
+                <span className="hidden min-[400px]:inline">{t('nav.loginOrRegister', language)}</span>
               </Link>
             )}
           </div>
