@@ -63,7 +63,7 @@ export function Home() {
             <Button variant="accent" size="lg" asChild>
               <Link to="/shop">{t('common.browseAll', language)}</Link>
             </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary" asChild>
+            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black" asChild>
               <Link to="/style-finder">{t('nav.styleFinder', language)}</Link>
             </Button>
           </motion.div>

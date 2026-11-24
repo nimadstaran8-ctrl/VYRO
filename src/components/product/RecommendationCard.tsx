@@ -33,7 +33,7 @@ export function RecommendationCard({ product, matchScore }: RecommendationCardPr
           onError={handleImageError}
         />
         {matchScore && (
-          <div className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">
+          <div className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-bold text-on-accent">
             {matchScore}% MATCH
           </div>
         )}

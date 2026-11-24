@@ -72,7 +72,7 @@ export function Shop() {
                 className={cn(
                   'rounded-full px-5 py-2 text-sm font-medium transition-colors',
                   activeFilter === f.value
-                    ? 'bg-primary text-white dark:bg-white dark:text-primary'
+                    ? 'bg-primary text-on-primary'
                     : 'text-primary hover:bg-background'
                 )}
               >

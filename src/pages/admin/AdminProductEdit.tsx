@@ -458,7 +458,7 @@ function ProductEditor({ id }: { id?: string }) {
                   onClick={() => handleColorToggle(color.value)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     formData.colors.includes(color.value)
-                      ? 'bg-primary text-white dark:bg-white dark:text-primary'
+                      ? 'bg-primary text-on-primary'
                       : 'bg-background text-primary hover:bg-primary/10'
                   }`}
                 >

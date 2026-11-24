@@ -92,7 +92,7 @@ export function ConfirmDialog({
           <Button
             onClick={onConfirm}
             className={cn(
-              variant === 'danger' && 'bg-red-500 hover:bg-red-600 text-white border-red-500'
+              variant === 'danger' && 'bg-red-700 hover:bg-red-800 text-white border-red-700'
             )}
           >
             {confirmText}

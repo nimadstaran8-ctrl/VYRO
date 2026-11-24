@@ -168,7 +168,7 @@ export function AdminDashboard() {
           className="group flex items-center gap-4 rounded-2xl bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
-            <Plus className="h-7 w-7 text-primary" />
+            <Plus className="h-7 w-7 text-on-accent" />
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-medium text-primary">{language === 'fa' ? 'افزودن محصول' : 'Add Product'}</h2>

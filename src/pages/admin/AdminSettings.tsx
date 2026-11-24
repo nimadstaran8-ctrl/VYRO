@@ -171,7 +171,7 @@ export function AdminSettings() {
               value={settings.store.storeDescription}
               onChange={(e) => updateStore('storeDescription', e.target.value)}
               rows={2}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
             />
           </div>
         </div>
@@ -352,7 +352,7 @@ export function AdminSettings() {
                   onClick={() => toggleStyleEnabled(s.value)}
                   className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                     settings.aiStylist.enabledStyles.includes(s.value)
-                      ? 'border-primary bg-primary text-white dark:bg-white dark:text-primary'
+                      ? 'border-primary bg-primary text-on-primary'
                       : 'border-border text-text-secondary hover:border-primary/50'
                   }`}
                 >

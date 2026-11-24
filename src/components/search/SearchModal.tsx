@@ -82,7 +82,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('search.searchPlaceholder', language)}
-                className="flex-1 bg-transparent text-lg text-primary placeholder:text-text-secondary/50 focus:outline-none"
+                className="flex-1 bg-transparent text-lg text-primary placeholder:text-text-secondary focus:outline-none"
               />
               <button
                 type="button"
@@ -186,7 +186,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 <Link
                   to={`/search?q=${encodeURIComponent(query)}`}
                   onClick={onClose}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white hover:bg-primary/90 dark:bg-white dark:text-primary dark:hover:bg-white/90"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-on-primary hover:bg-primary/90"
                 >
                   {t('search.viewAllResults', language)} "{query}"
                   <ArrowRight size={16} className="rtl:rotate-180" />

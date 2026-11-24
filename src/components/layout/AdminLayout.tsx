@@ -119,7 +119,7 @@ export function AdminLayout() {
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 isActive(item.path)
-                  ? 'bg-primary text-white dark:bg-white dark:text-primary'
+                  ? 'bg-primary text-on-primary'
                   : 'text-primary hover:bg-background'
               )}
             >

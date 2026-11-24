@@ -25,14 +25,14 @@ export function Button({
 
   const variants = {
     primary:
-      'bg-primary text-white hover:bg-primary/90 dark:bg-white dark:text-primary dark:hover:bg-white/90',
+      'bg-primary text-on-primary hover:bg-primary/90',
     secondary:
       'bg-white text-primary border border-border hover:bg-background dark:bg-surface dark:text-primary dark:border-border dark:hover:bg-background',
     outline:
-      'bg-transparent text-primary border border-primary hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-primary',
+      'bg-transparent text-primary border border-primary hover:bg-primary hover:text-on-primary',
     ghost:
       'bg-transparent text-primary hover:bg-black/5 dark:hover:bg-white/10',
-    accent: 'bg-accent text-primary hover:bg-accent/90',
+    accent: 'bg-accent text-on-accent hover:bg-accent/90',
   };
 
   const sizes = {

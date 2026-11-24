@@ -168,7 +168,7 @@ export function AdminHomepage() {
                 value={formData.aboutDescription}
                 onChange={(e) => handleChange('aboutDescription', e.target.value)}
                 rows={3}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
                 placeholder={language === 'fa' 
                   ? 'وایرو برای افرادی ساخته شده که باور دارند جزئیات کوچک می‌تواند استایل را تعریف کند.'
                   : 'Vyro is built for people who believe the small details can define style.'}

@@ -146,7 +146,7 @@ export function StyleFinder() {
     >
       <div className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -start-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 bg-white/80 dark:bg-black/70" />
+      <div className="pointer-events-none absolute inset-0 bg-white/80 dark:bg-black/80" />
 
       <div className="relative z-10 mb-8 flex items-center justify-between">
         <div className="flex gap-1.5">
@@ -165,7 +165,7 @@ export function StyleFinder() {
             />
           ))}
         </div>
-        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary dark:text-slate-400">
+        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">
           {t('common.step', language)} {step + 1} {t('common.of', language)} {STEP_COUNT}
         </span>
       </div>
@@ -375,7 +375,7 @@ function Step({
       className="relative z-10"
     >
       <h3 className="mb-1 text-xl font-semibold text-primary dark:text-white md:text-2xl">{title}</h3>
-      {subtitle && <p className="mb-6 text-sm text-text-secondary dark:text-slate-400">{subtitle}</p>}
+      {subtitle && <p className="mb-6 text-sm text-text-secondary">{subtitle}</p>}
       {children}
     </motion.div>
   );
@@ -396,7 +396,7 @@ function OptionCard({
       onClick={onClick}
       className={`rounded-xl border px-4 py-5 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
         selected
-          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-400/10'
+          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-800 shadow-lg shadow-cyan-400/10 dark:text-cyan-200'
           : 'border-border dark:border-white/10 bg-background dark:bg-white/5 text-text-secondary dark:text-slate-300 hover:border-cyan-400/30 hover:bg-black/5 dark:hover:bg-white/[0.07]'
       }`}
       aria-pressed={selected}

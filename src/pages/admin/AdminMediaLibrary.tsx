@@ -140,7 +140,7 @@ export function AdminMediaLibrary() {
             placeholder={t('media.searchPlaceholder', language)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full ps-10 pe-4 py-3 rounded-xl border border-border bg-surface text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+            className="w-full ps-10 pe-4 py-3 rounded-xl border border-border bg-surface text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
           />
         </div>
         
@@ -500,7 +500,7 @@ function UploadModal({ language, onClose, onSuccess, onError }: UploadModalProps
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('media.description', language)}
                 rows={2}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+                className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
               />
             </div>
             <div>
@@ -599,7 +599,7 @@ function EditModal({ image, language, onClose, onSuccess, onError }: EditModalPr
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
             />
           </div>
           <div>

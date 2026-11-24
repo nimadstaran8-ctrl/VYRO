@@ -51,7 +51,7 @@ export function CartDrawer() {
               <div className="flex items-center gap-2">
                 <ShoppingBag size={20} className="text-primary" />
                 <h2 className="text-lg font-semibold text-primary">{t('cart.yourCart', language)}</h2>
-                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-primary">
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-on-accent">
                   {items.length}
                 </span>
               </div>

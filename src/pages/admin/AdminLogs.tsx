@@ -79,7 +79,7 @@ export function AdminLogs() {
             placeholder={t('adminLogs.searchPlaceholder', language)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface py-3 pe-4 ps-10 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+            className="w-full rounded-xl border border-border bg-surface py-3 pe-4 ps-10 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
             aria-label={t('adminLogs.searchLabel', language)}
           />
         </div>

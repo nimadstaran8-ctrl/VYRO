@@ -101,7 +101,7 @@ export function Header() {
             >
               <Heart size={20} />
               {wishlistItems.length > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-primary">
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent">
                   {wishlistItems.length}
                 </span>
               )}

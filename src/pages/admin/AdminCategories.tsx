@@ -151,7 +151,7 @@ export function AdminCategories() {
             placeholder={language === 'fa' ? 'جستجوی دسته‌بندی...' : 'Search categories...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full ps-10 pe-4 py-3 rounded-xl border border-border bg-surface text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+            className="w-full ps-10 pe-4 py-3 rounded-xl border border-border bg-surface text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
           />
         </div>
       </div>
@@ -272,7 +272,7 @@ export function AdminCategories() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary/60 focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none"
                 />
               </div>
               <Input

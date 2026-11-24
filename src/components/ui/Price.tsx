@@ -31,7 +31,7 @@ export function Price({ price, oldPrice, size = 'md', className }: PriceProps) {
         </span>
       )}
       {discount && (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-primary px-2 py-0.5 rounded-full">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-on-accent px-2 py-0.5 rounded-full">
           -{discount}%
         </span>
       )}
