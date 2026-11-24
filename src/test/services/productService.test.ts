@@ -16,19 +16,23 @@ import {
 import type { Filters } from '../../types';
 
 describe('Product Service', () => {
-  it('upgrades default images without replacing custom images or stock', () => {
+  it.each([1, 2])('removes legacy default images from storage version %s', (version) => {
     const storageKey = 'vyro_product_repository';
     const originalStorage = localStorage.getItem(storageKey);
     const [first, second] = products;
-    const previousImages = first.images.slice(1);
+    const previousImages = ['/images/products/hat-black.svg', '/images/products/hat-cap1.svg'];
+    const storedImages = version === 1 ? previousImages : [...first.images, ...previousImages];
     const customImages = ['img_custom'];
+    const camo = products.find(product => product.id === 'hat-007')!;
+    const camoImages = ['/images/products/hat-camo.svg', '/images/products/hat-black.svg'];
 
     try {
       localStorage.setItem(storageKey, JSON.stringify({
-        version: 1,
+        version,
         products: [
-          { ...first, stock: 9, images: previousImages, primaryImage: previousImages[0] },
+          { ...first, stock: 9, images: storedImages, primaryImage: storedImages[0] },
           { ...second, images: customImages, primaryImage: customImages[0] },
+          { ...camo, images: camoImages, primaryImage: camoImages[0] },
         ],
       }));
       productRepository.reload();
@@ -38,7 +42,8 @@ describe('Product Service', () => {
         primaryImage: first.images[0],
       });
       expect(productRepository.getById(second.id)?.images).toEqual(customImages);
-      expect(JSON.parse(localStorage.getItem(storageKey)!).version).toBe(2);
+      expect(productRepository.getById(camo.id)?.images).toEqual([]);
+      expect(JSON.parse(localStorage.getItem(storageKey)!).version).toBe(3);
     } finally {
       if (originalStorage === null) localStorage.removeItem(storageKey);
       else localStorage.setItem(storageKey, originalStorage);

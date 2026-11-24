@@ -2,23 +2,53 @@ import type { Product } from '../../../types/product';
 import { products as catalogProducts } from '../../../data/mock/products';
 
 const STORAGE_KEY = 'vyro_product_repository';
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const catalogById = new Map(catalogProducts.map(product => [product.id, product]));
 
-function addCatalogPhoto(product: Product): Product {
-  const catalog = catalogById.get(product.id);
-  const photo = catalog?.images[0];
-  if (!catalog || !photo?.startsWith('/images/products/photos/')) return product;
+// Default illustrations from earlier catalog releases, keyed by product ID.
+const legacyIllustrations: Record<string, readonly string[]> = {
+  'hat-001': ['hat-black.svg', 'hat-cap1.svg'],
+  'hat-002': ['hat-beige.svg', 'hat-white.svg'],
+  'hat-003': ['hat-fedora.svg', 'hat-white.svg'],
+  'hat-004': ['hat-sport.svg', 'hat-blue.svg'],
+  'hat-005': ['hat-luxury.svg', 'hat-black.svg'],
+  'hat-006': ['beanie.svg', 'hat-beige.svg'],
+  'hat-007': ['hat-camo.svg', 'hat-black.svg'],
+  'hat-008': ['hat-straw.svg', 'hat-beige.svg'],
+  'hat-009': ['hat-white.svg', 'hat-cap1.svg'],
+  'hat-010': ['hat-trucker.svg', 'hat-luxury.svg'],
+  'glass-001': ['glasses-aviator.svg', 'glasses-black.svg'],
+  'glass-002': ['glasses-round.svg', 'glasses-clear.svg'],
+  'glass-003': ['glasses-tortoise.svg', 'glasses-brown.svg'],
+  'glass-004': ['glasses-sport.svg', 'glasses-blue.svg'],
+  'glass-005': ['glasses-gold.svg', 'glasses-round.svg'],
+  'glass-006': ['glasses-wayfarer.svg', 'glasses-aviator.svg'],
+  'glass-007': ['glasses-oversized.svg', 'glasses-tortoise.svg'],
+  'glass-008': ['glasses-clubmaster.svg', 'glasses-gold.svg'],
+  'glass-009': ['glasses-clear.svg', 'glasses-sport.svg'],
+  'glass-010': ['glasses-mirror.svg', 'glasses-aviator.svg'],
+};
 
-  const previousImages = catalog.images.slice(1);
-  const hasDefaultImages =
+function updateCatalogImages(product: Product): Product {
+  const catalog = catalogById.get(product.id);
+  const previousImages = legacyIllustrations[product.id]?.map(image => `/images/products/${image}`);
+  if (!catalog || !previousImages) return product;
+
+  const hasOldDefaultGallery =
     product.images.length === previousImages.length &&
     previousImages.every((image, index) => image === product.images[index]) &&
     (!product.primaryImage || product.primaryImage === previousImages[0]);
+  if (hasOldDefaultGallery) {
+    return { ...product, images: [...catalog.images], primaryImage: catalog.images[0] };
+  }
 
-  return hasDefaultImages
-    ? { ...product, images: [photo, ...product.images], primaryImage: photo }
-    : product;
+  const samplePhoto = catalog.images[0];
+  if (!samplePhoto || !product.images.includes(samplePhoto)) return product;
+  const images = product.images.filter(image => !previousImages.includes(image));
+  const primaryImage = product.primaryImage && images.includes(product.primaryImage)
+    ? product.primaryImage
+    : samplePhoto;
+  return { ...product, images, primaryImage };
 }
 
 export interface ProductStorageData {
@@ -153,7 +183,7 @@ export class ProductRepository {
     const data = getStorageData();
     this.cachedProducts = data.products;
     if (data.version < STORAGE_VERSION) {
-      this.cachedProducts = data.products.map(addCatalogPhoto);
+      this.cachedProducts = data.products.map(updateCatalogImages);
       try {
         setStorageData({ products: this.cachedProducts, version: STORAGE_VERSION });
       } catch {
