@@ -42,7 +42,7 @@ describe('Product Service', () => {
         primaryImage: first.images[0],
       });
       expect(productRepository.getById(second.id)?.images).toEqual(customImages);
-      expect(productRepository.getById(camo.id)?.images).toEqual([]);
+      expect(productRepository.getById(camo.id)?.images).toEqual(camo.images);
       expect(JSON.parse(localStorage.getItem(storageKey)!).version).toBe(3);
     } finally {
       if (originalStorage === null) localStorage.removeItem(storageKey);

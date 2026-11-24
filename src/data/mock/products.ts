@@ -140,7 +140,7 @@ export const products: Product[] = [
     priceUSD: 36,
     description:
       'Rugged camo pattern with a matte black snap closure. Built for those who live loud and dress sharper.',
-    images: [],
+    images: ['/images/products/photos/street-camo-cap.jpg'],
     colors: ['Green', 'Black'],
     sizes: ['One Size'],
     rating: 4.6,
