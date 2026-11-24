@@ -26,14 +26,15 @@ export function Home() {
         description={language === 'fa' ? 'استایل خود را پیدا کنید. کلاه و عینک‌هایی طراحی شده برای استایل شما.' : 'Find Your Vibe. Hats and glasses made for your style.'}
       />
 
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-primary">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black">
         <div className="absolute inset-0">
           <img
-            src="/images/hero/hero-fashion.svg"
-            alt="Fashion model wearing VYRO hat and glasses"
-            className="h-full w-full object-cover opacity-55"
+            src="/images/find-your-vibe-bg.png"
+            alt=""
+            fetchPriority="high"
+            className="h-full! w-full object-cover object-left sm:object-center"
           />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/55" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-32 text-center sm:px-6 lg:px-8">
