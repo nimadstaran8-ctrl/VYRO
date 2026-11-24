@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Send } from 'lucide-react';
+import { Phone, Send } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
-import { getSocialSettings } from '../../services/settings';
+import { getSocialSettings, normalizeFooterPhone } from '../../services/settings';
 
 const footerLinks = (lang: string) => [
   { label: t('nav.shop', lang as 'fa' | 'en'), href: '/shop' },
@@ -30,15 +30,19 @@ interface SocialLinkProps {
   url: string;
   label: string;
   children: ReactNode;
+  phone?: boolean;
 }
 
-function SocialLink({ url, label, children }: SocialLinkProps) {
-  if (!isValidExternalUrl(url)) {
+function SocialLink({ url, label, children, phone = false }: SocialLinkProps) {
+  const number = phone ? normalizeFooterPhone(url) : null;
+  const href = phone ? (number ? `tel:${number}` : null) : (isValidExternalUrl(url) ? url : null);
+
+  if (!href) {
     return (
       <span
         className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white/40"
         aria-label={label}
-        title={`${label} URL is not configured`}
+        title={phone ? label : `${label} URL is not configured`}
       >
         {children}
       </span>
@@ -47,9 +51,9 @@ function SocialLink({ url, label, children }: SocialLinkProps) {
 
   return (
     <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href}
+      target={phone ? undefined : '_blank'}
+      rel={phone ? undefined : 'noopener noreferrer'}
       className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-accent hover:text-on-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary dark:focus-visible:ring-offset-surface"
       aria-label={label}
     >
@@ -79,7 +83,7 @@ export function Footer() {
                 ? 'استایل خود را پیدا کنید. کلاه و عینک‌های ممتاز برای افرادی که استایل را بخشی از هویت خود می‌دانند.'
                 : 'Find Your Vibe. Premium hats and sunglasses designed for individuals who see style as part of their identity.'}
             </p>
-            <div className="mt-6 flex gap-4">
+            <div className="mt-6 flex flex-wrap gap-4">
               <SocialLink url={social.instagram} label="Instagram">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -94,6 +98,9 @@ export function Footer() {
               </SocialLink>
               <SocialLink url={social.telegram} label="Telegram">
                 <Send size={18} />
+              </SocialLink>
+              <SocialLink url={social.phone} label={language === 'fa' ? 'تماس تلفنی' : 'Phone call'} phone>
+                <Phone size={18} aria-hidden="true" />
               </SocialLink>
             </div>
           </div>
@@ -135,7 +142,7 @@ export function Footer() {
           <p className="text-xs text-white/50">
             &copy; {new Date().getFullYear()} VYRO. {language === 'fa' ? 'تمام حقوق محفوظ است.' : 'All rights reserved.'}
           </p>
-          <p className="text-xs text-white/50">{language === 'fa' ? 'طراحی شده برای استایل. ساخته شده برای شما.' : 'Designed for style. Built for you.'}</p>
+          <p className="text-xs text-white/70">{language === 'fa' ? 'سازنده: نیمادستاران' : 'Creator: Nima Dastaran'}</p>
         </div>
       </div>
     </footer>

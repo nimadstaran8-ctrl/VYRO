@@ -53,13 +53,14 @@ export interface PaymentSettings {
 }
 
 /**
- * Social media URLs shown in the storefront footer. Stored in settings so
+ * Social links and the contact number shown in the storefront footer. Stored in settings so
  * the store owner can update them from the admin panel without code changes.
  */
 export interface SocialSettings {
   instagram: string;
   tiktok: string;
   telegram: string;
+  phone: string;
 }
 
 export interface Settings {
@@ -106,7 +107,7 @@ const DEFAULT_SETTINGS: Settings = {
     cardNumber: '',
     cardHolder: '',
   },
-  social: { ...SOCIAL_LINKS },
+  social: { ...SOCIAL_LINKS, phone: '' },
   aiStylist: { ...DEFAULT_AI_STYLIST_SETTINGS },
 };
 
@@ -121,7 +122,11 @@ function getSettingsData(): Settings {
         currency: { ...DEFAULT_SETTINGS.currency, ...parsed.currency },
         homepage: { ...DEFAULT_SETTINGS.homepage, ...parsed.homepage },
         payment: { ...DEFAULT_SETTINGS.payment, ...parsed.payment },
-        social: { ...DEFAULT_SETTINGS.social, ...parsed.social },
+        social: {
+          ...DEFAULT_SETTINGS.social,
+          ...parsed.social,
+          phone: typeof parsed.social?.phone === 'string' ? parsed.social.phone : '',
+        },
         aiStylist: { ...DEFAULT_SETTINGS.aiStylist, ...parsed.aiStylist },
       };
     }
@@ -233,10 +238,22 @@ export function getSocialSettings(): SocialSettings {
   return getSettingsData().social;
 }
 
+export function normalizeFooterPhone(value: string): string | null {
+  if (typeof value !== 'string') return null;
+  const phone = value
+    .replace(/[۰-۹٠-٩]/g, digit => String(digit.charCodeAt(0) - (digit <= '٩' ? 0x0660 : 0x06f0)))
+    .replace(/[\s().-]/g, '');
+  return /^\+?\d{7,15}$/.test(phone) ? phone : null;
+}
+
 export function updateSocialSettings(updates: Partial<SocialSettings>): { success: boolean; error?: string } {
+  const value = updates.phone;
+  const phone = value === undefined ? undefined : value.trim() ? normalizeFooterPhone(value) : '';
+  if (phone === null) return { success: false, error: 'Invalid footer phone number' };
+
   try {
     const settings = getSettingsData();
-    settings.social = { ...settings.social, ...updates };
+    settings.social = { ...settings.social, ...updates, phone: phone ?? settings.social.phone };
     setSettingsData(settings);
     logActivity({ type: 'settings-updated', detail: { section: 'social' } });
     return { success: true };
@@ -272,7 +289,7 @@ export function updateAIStylistSettings(
 export function resetSocialSettings(): { success: boolean; error?: string } {
   try {
     const settings = getSettingsData();
-    settings.social = { ...SOCIAL_LINKS };
+    settings.social = { ...DEFAULT_SETTINGS.social };
     setSettingsData(settings);
     logActivity({ type: 'settings-updated', detail: { section: 'social', name: 'reset' } });
     return { success: true };

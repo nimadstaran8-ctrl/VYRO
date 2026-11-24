@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Save, RotateCcw, Send } from 'lucide-react';
+import { Phone, Save, RotateCcw, Send } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -7,6 +7,7 @@ import { useLanguageStore } from '../../stores/languageStore';
 import { type Language } from '../../lib/i18n';
 import {
   getSocialSettings,
+  normalizeFooterPhone,
   updateSocialSettings,
   resetSocialSettings,
   type SocialSettings,
@@ -38,11 +39,7 @@ export function AdminFooterSocial() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [touched, setTouched] = useState<Record<SocialPlatform, boolean>>({
-    instagram: false,
-    tiktok: false,
-    telegram: false,
-  });
+  const [touched, setTouched] = useState<Partial<Record<SocialPlatform, boolean>>>({});
 
   const platforms: PlatformConfig[] = [
     {
@@ -70,11 +67,16 @@ export function AdminFooterSocial() {
       label: language === 'fa' ? 'تلگرام' : 'Telegram',
       icon: <Send size={18} />,
     },
+    {
+      key: 'phone',
+      label: language === 'fa' ? 'شماره تلفن فوتر' : 'Footer phone number',
+      icon: <Phone size={18} aria-hidden="true" />,
+    },
   ];
 
   const errors = useMemo(() => {
     const next: Partial<Record<SocialPlatform, string>> = {};
-    (['instagram', 'tiktok', 'telegram'] as SocialPlatform[]).forEach((key) => {
+    (['instagram', 'tiktok', 'telegram'] as const).forEach((key) => {
       const value = formData[key];
       if (touched[key] && !isValidHttpsUrl(value)) {
         next[key] = language === 'fa'
@@ -82,18 +84,15 @@ export function AdminFooterSocial() {
           : 'Please enter a valid HTTPS URL';
       }
     });
+    if (touched.phone && formData.phone.trim() && !normalizeFooterPhone(formData.phone)) {
+      next.phone = language === 'fa' ? 'لطفاً یک شماره تلفن معتبر وارد کنید' : 'Please enter a valid phone number';
+    }
     return next;
   }, [formData, touched, language]);
 
   const hasErrors = Object.keys(errors).length > 0;
-  const hasChanges = useMemo(() => {
-    const current = getSocialSettings();
-    return (
-      formData.instagram !== current.instagram ||
-      formData.tiktok !== current.tiktok ||
-      formData.telegram !== current.telegram
-    );
-  }, [formData]);
+  const current = getSocialSettings();
+  const hasChanges = platforms.some(({ key }) => formData[key] !== current[key]);
 
   const handleChange = (key: SocialPlatform) => (value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -107,7 +106,6 @@ export function AdminFooterSocial() {
   };
 
   const handleSave = () => {
-    setTouched({ instagram: true, tiktok: true, telegram: true });
     setSaveMessage(null);
     setSaveError(null);
 
@@ -120,6 +118,7 @@ export function AdminFooterSocial() {
     setIsSaving(false);
 
     if (result.success) {
+      setFormData(getSocialSettings());
       setSaveMessage(language === 'fa' ? 'تنظیمات ذخیره شد' : 'Settings saved successfully');
       setTimeout(() => setSaveMessage(null), 3000);
     } else {
@@ -135,6 +134,7 @@ export function AdminFooterSocial() {
     const result = resetSocialSettings();
     if (result.success) {
       setFormData(getSocialSettings());
+      setTouched({});
       setSaveMessage(language === 'fa' ? 'تنظیمات به حالت پیش‌فرض بازنشانی شد' : 'Settings reset to defaults');
       setTimeout(() => setSaveMessage(null), 3000);
     } else {
@@ -145,19 +145,19 @@ export function AdminFooterSocial() {
   const content = {
     title: language === 'fa' ? 'فوتر و شبکه‌های اجتماعی' : 'Footer & Social Media Settings',
     subtitle: language === 'fa'
-      ? 'آدرس شبکه‌های اجتماعی نمایش داده شده در فوتر را مدیریت کنید.'
-      : 'Manage the social media links shown in the storefront footer.',
+      ? 'آدرس شبکه‌های اجتماعی و شماره تلفن نمایش داده‌شده در فوتر را مدیریت کنید.'
+      : 'Manage the social media links and contact number shown in the storefront footer.',
     save: language === 'fa' ? 'ذخیره تغییرات' : 'Save Changes',
     reset: language === 'fa' ? 'بازنشانی به پیش‌فرض' : 'Reset to Defaults',
     resetTitle: language === 'fa' ? 'بازنشانی تنظیمات' : 'Reset Settings',
     resetMessage: language === 'fa'
-      ? 'آیا مطمئن هستید که می‌خواهید آدرس‌ها را به حالت پیش‌فرض بازنشانی کنید؟'
-      : 'Are you sure you want to reset the URLs to their default values?',
+      ? 'آیا می‌خواهید پیوندها و شماره تلفن فوتر را به حالت پیش‌فرض برگردانید؟'
+      : 'Reset the footer links and phone number to their defaults?',
     confirm: language === 'fa' ? 'بازنشانی' : 'Reset',
     cancel: language === 'fa' ? 'لغو' : 'Cancel',
     requiredHttps: language === 'fa'
-      ? 'فقط آدرس‌های HTTPS مجاز هستند.'
-      : 'Only HTTPS URLs are allowed.',
+      ? 'لینک شبکه‌های اجتماعی باید HTTPS باشد. برای غیرفعال کردن تماس، شماره را خالی بگذارید.'
+      : 'Social links must use HTTPS. Leave the phone number blank to disable calling.',
   };
 
   return (
@@ -221,12 +221,14 @@ export function AdminFooterSocial() {
                 <div className="flex-1">
                   <Input
                     label={label}
-                    type="url"
+                    type={key === 'phone' ? 'tel' : 'url'}
+                    dir={key === 'phone' ? 'ltr' : undefined}
+                    aria-label={label}
                     value={formData[key]}
                     onChange={(e) => handleChange(key)(e.target.value)}
                     onBlur={handleBlur(key)}
                     error={errors[key]}
-                    placeholder={`https://www.${key}.com/...`}
+                    placeholder={key === 'phone' ? '+98 912 …' : `https://www.${key}.com/...`}
                     disabled={isSaving}
                   />
                 </div>
