@@ -146,7 +146,7 @@ export function StyleFinder() {
     >
       <div className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -start-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 bg-white/80 dark:bg-black/80" />
+      <div className="pointer-events-none absolute inset-0 bg-white/80 dark:hidden" />
 
       <div className="relative z-10 mb-8 flex items-center justify-between">
         <div className="flex gap-1.5">
@@ -159,13 +159,13 @@ export function StyleFinder() {
               className={`h-1.5 rounded-full transition-all ${
                 i <= step
                   ? 'w-10 bg-cyan-400'
-                  : 'w-6 bg-border dark:bg-white/10'
+                  : 'w-6 bg-border dark:bg-white/35 dark:backdrop-blur-sm'
               } ${step > i ? 'cursor-pointer hover:bg-cyan-300' : ''}`}
               aria-label={`${t('common.step', language)} ${i + 1}`}
             />
           ))}
         </div>
-        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary dark:rounded-full dark:bg-white/40 dark:px-3 dark:py-1 dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff] dark:backdrop-blur-md">
           {t('common.step', language)} {step + 1} {t('common.of', language)} {STEP_COUNT}
         </span>
       </div>
@@ -252,7 +252,7 @@ export function StyleFinder() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className="relative z-10"
+            className="relative z-10 dark:rounded-2xl dark:bg-surface/50 dark:p-4 dark:backdrop-blur-md dark:backdrop-brightness-75 sm:dark:p-6"
           >
             <ResultsHeader
               answers={answers}
@@ -340,7 +340,7 @@ export function StyleFinder() {
             type="button"
             onClick={prevStep}
             disabled={step === 0}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-black/5 dark:bg-white/40 dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff] dark:backdrop-blur-md dark:hover:bg-white/70 disabled:opacity-40"
           >
             <ArrowLeft size={16} className="rtl:rotate-180" />
             {t('common.back', language)}
@@ -374,8 +374,10 @@ function Step({
       transition={{ duration: 0.25 }}
       className="relative z-10"
     >
-      <h3 className="mb-1 text-xl font-semibold text-primary dark:text-white md:text-2xl">{title}</h3>
-      {subtitle && <p className="mb-6 text-sm text-text-secondary">{subtitle}</p>}
+      <div className="mb-6 w-fit dark:rounded-xl dark:bg-white/40 dark:px-3 dark:py-2 dark:backdrop-blur-md">
+        <h3 className="mb-1 text-xl font-semibold text-primary dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff] md:text-2xl">{title}</h3>
+        {subtitle && <p className="text-sm text-text-secondary dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff]">{subtitle}</p>}
+      </div>
       {children}
     </motion.div>
   );
@@ -396,8 +398,8 @@ function OptionCard({
       onClick={onClick}
       className={`rounded-xl border px-4 py-5 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
         selected
-          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-800 shadow-lg shadow-cyan-400/10 dark:text-cyan-200'
-          : 'border-border dark:border-white/10 bg-background dark:bg-white/5 text-text-secondary dark:text-slate-300 hover:border-cyan-400/30 hover:bg-black/5 dark:hover:bg-white/[0.07]'
+          ? 'border-cyan-400 bg-cyan-400/10 text-cyan-800 shadow-lg shadow-cyan-400/10 dark:bg-cyan-100/50 dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff] dark:backdrop-blur-md'
+          : 'border-border bg-background text-text-secondary hover:border-cyan-400/30 hover:bg-black/5 dark:border-white/35 dark:bg-white/40 dark:text-slate-950 dark:[text-shadow:0_1px_2px_#fff] dark:backdrop-blur-md dark:hover:bg-white/70'
       }`}
       aria-pressed={selected}
     >
