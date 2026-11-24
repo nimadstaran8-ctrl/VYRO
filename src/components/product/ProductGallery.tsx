@@ -30,8 +30,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
             key={activeIndex}
             src={mainImageError ? FALLBACK_IMAGE : images[activeIndex]}
             alt={`${alt} - view ${activeIndex + 1}`}
-            className="h-full w-full object-cover"
-            style={{ aspectRatio: '1 / 1' }}
+            className="absolute inset-0 h-full! w-full object-contain"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -58,7 +57,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
               <img
                 src={thumbnailErrors[index] ? FALLBACK_IMAGE : image}
                 alt={`${alt} thumbnail ${index + 1}`}
-                className="h-full w-full object-cover"
+                className="h-full! w-full object-contain"
                 loading="lazy"
                 onError={() => handleThumbnailError(index)}
               />

@@ -58,13 +58,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
         className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-background"
         aria-label={product.name}
       >
-        <motion.img
+        <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}
           alt={product.name}
-          className="h-full w-full object-cover"
-          style={{ aspectRatio: '1 / 1' }}
-          animate={{ scale: isHovered ? 1.04 : 1 }}
-          transition={{ duration: 0.5 }}
+          className="absolute inset-0 h-full! w-full object-contain"
           loading="eager"
           onError={handleImageError}
         />
@@ -72,8 +69,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <motion.img
             src={product.images[1]}
             alt={`${product.name} alternate view`}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ aspectRatio: '1 / 1' }}
+            className="absolute inset-0 h-full! w-full object-contain"
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
             transition={{ duration: 0.3 }}
