@@ -10,6 +10,7 @@ export const products: Product[] = [
     description:
       'A clean, structured black cap built for city streets. Minimal branding, premium cotton twill, and an adjustable strap for all-day comfort.',
     images: [
+      '/images/products/photos/urban-black-cap.jpg',
       '/images/products/hat-black.svg',
       '/images/products/hat-cap1.svg'
     ],
@@ -36,6 +37,7 @@ export const products: Product[] = [
     description:
       'Soft cotton bucket hat in a versatile beige tone. Lightweight, breathable, and the ultimate companion for sunny weekends.',
     images: [
+      '/images/products/photos/minimal-beige-bucket-hat.jpg',
       '/images/products/hat-beige.svg',
       '/images/products/hat-white.svg'
     ],
@@ -60,6 +62,7 @@ export const products: Product[] = [
     description:
       'Timeless wool fedora with a structured brim and signature ribbon band. A refined choice for elevated everyday looks.',
     images: [
+      '/images/products/photos/classic-wool-fedora.jpg',
       '/images/products/hat-fedora.svg',
       '/images/products/hat-white.svg'
     ],
@@ -85,6 +88,7 @@ export const products: Product[] = [
     description:
       'Engineered for movement. Moisture-wicking fabric, laser-cut perforations, and a secure fit for workouts and weekends.',
     images: [
+      '/images/products/photos/sport-performance-cap.jpg',
       '/images/products/hat-sport.svg',
       '/images/products/hat-blue.svg'
     ],
@@ -110,6 +114,7 @@ export const products: Product[] = [
     description:
       'Hand-finished leather cap with brushed metal hardware. A bold statement piece that brings edge to any outfit.',
     images: [
+      '/images/products/photos/luxury-leather-cap.jpg',
       '/images/products/hat-luxury.svg',
       '/images/products/hat-black.svg'
     ],
@@ -135,6 +140,7 @@ export const products: Product[] = [
     description:
       'Chunky rib-knit beanie in neutral tones. Cozy, breathable, and effortlessly cool for everyday wear.',
     images: [
+      '/images/products/photos/casual-knit-beanie.jpg',
       '/images/products/beanie.svg',
       '/images/products/hat-beige.svg'
     ],
@@ -183,6 +189,7 @@ export const products: Product[] = [
     description:
       'Wide-brim straw hat with a minimalist black band. Your go-to for beach days, brunches, and summer escapes.',
     images: [
+      '/images/products/photos/classic-straw-hat.jpg',
       '/images/products/hat-straw.svg',
       '/images/products/hat-beige.svg'
     ],
@@ -207,6 +214,7 @@ export const products: Product[] = [
     description:
       'Crisp white cap with tonal stitching. Clean lines and a curved brim make it a wardrobe staple.',
     images: [
+      '/images/products/photos/minimal-white-cap.jpg',
       '/images/products/hat-white.svg',
       '/images/products/hat-cap1.svg'
     ],
@@ -232,6 +240,7 @@ export const products: Product[] = [
     description:
       'Retro mesh-back trucker cap in a worn brown wash. Nostalgic attitude with modern comfort.',
     images: [
+      '/images/products/photos/vintage-brown-trucker.jpg',
       '/images/products/hat-trucker.svg',
       '/images/products/hat-luxury.svg'
     ],
@@ -256,6 +265,7 @@ export const products: Product[] = [
     description:
       'Iconic aviator silhouette with jet-black lenses and a slim metal frame. Timeless, confident, and endlessly wearable.',
     images: [
+      '/images/products/photos/noir-aviator-sunglasses.jpg',
       '/images/products/glasses-aviator.svg',
       '/images/products/glasses-black.svg'
     ],
@@ -281,6 +291,7 @@ export const products: Product[] = [
     description:
       'Ultra-light round frames with clear lenses. A quiet, intellectual aesthetic for minimal wardrobes.',
     images: [
+      '/images/products/photos/minimal-round-glasses.jpg',
       '/images/products/glasses-round.svg',
       '/images/products/glasses-clear.svg'
     ],
@@ -305,6 +316,7 @@ export const products: Product[] = [
     description:
       'Hand-polished acetate frames in warm tortoise. Brown gradient lenses complete the vintage-modern look.',
     images: [
+      '/images/products/photos/classic-tortoise-sunglasses.jpg',
       '/images/products/glasses-tortoise.svg',
       '/images/products/glasses-brown.svg'
     ],
@@ -330,6 +342,7 @@ export const products: Product[] = [
     description:
       'Wraparound sport frames with polarized lenses. Grip temples and lightweight build keep up with every pace.',
     images: [
+      '/images/products/photos/sport-wrap-sunglasses.jpg',
       '/images/products/glasses-sport.svg',
       '/images/products/glasses-blue.svg'
     ],
@@ -354,6 +367,7 @@ export const products: Product[] = [
     description:
       'Gold-plated titanium frames with premium lenses. Refined detailing for those who appreciate quiet luxury.',
     images: [
+      '/images/products/photos/luxury-gold-frame-glasses.jpg',
       '/images/products/glasses-gold.svg',
       '/images/products/glasses-round.svg'
     ],
@@ -379,6 +393,7 @@ export const products: Product[] = [
     description:
       'The forever classic wayfarer shape in matte black. Versatile enough for city days and weekend road trips.',
     images: [
+      '/images/products/photos/casual-wayfarer-sunglasses.jpg',
       '/images/products/glasses-wayfarer.svg',
       '/images/products/glasses-aviator.svg'
     ],
@@ -404,6 +419,7 @@ export const products: Product[] = [
     description:
       'Bold oversized frames with dark tinted lenses. Designed to turn sidewalks into runways.',
     images: [
+      '/images/products/photos/street-oversized-sunglasses.jpg',
       '/images/products/glasses-oversized.svg',
       '/images/products/glasses-tortoise.svg'
     ],
@@ -428,6 +444,7 @@ export const products: Product[] = [
     description:
       'Half-rim clubmaster frames with gold accents and dark lenses. A smart silhouette that never dates.',
     images: [
+      '/images/products/photos/classic-clubmaster-sunglasses.jpg',
       '/images/products/glasses-clubmaster.svg',
       '/images/products/glasses-gold.svg'
     ],
@@ -452,6 +469,7 @@ export const products: Product[] = [
     description:
       'Crystal-clear acetate frames with a barely-there feel. Modern, transparent, and endlessly adaptable.',
     images: [
+      '/images/products/photos/minimal-clear-frame-glasses.jpg',
       '/images/products/glasses-clear.svg',
       '/images/products/glasses-sport.svg'
     ],
@@ -477,6 +495,7 @@ export const products: Product[] = [
     description:
       'Performance frames with blue mirror lenses. Maximum UV protection and a locked-in fit for active days.',
     images: [
+      '/images/products/photos/blue-mirror-sport-sunglasses.jpg',
       '/images/products/glasses-mirror.svg',
       '/images/products/glasses-aviator.svg'
     ],

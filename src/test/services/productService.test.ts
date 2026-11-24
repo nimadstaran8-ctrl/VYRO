@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { products } from '../../data/mock/products';
+import { productRepository } from '../../features/admin/services/productRepository';
 import {
   getProducts,
   getProductById,
@@ -14,6 +16,36 @@ import {
 import type { Filters } from '../../types';
 
 describe('Product Service', () => {
+  it('upgrades default images without replacing custom images or stock', () => {
+    const storageKey = 'vyro_product_repository';
+    const originalStorage = localStorage.getItem(storageKey);
+    const [first, second] = products;
+    const previousImages = first.images.slice(1);
+    const customImages = ['img_custom'];
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        version: 1,
+        products: [
+          { ...first, stock: 9, images: previousImages, primaryImage: previousImages[0] },
+          { ...second, images: customImages, primaryImage: customImages[0] },
+        ],
+      }));
+      productRepository.reload();
+      expect(productRepository.getById(first.id)).toMatchObject({
+        stock: 9,
+        images: first.images,
+        primaryImage: first.images[0],
+      });
+      expect(productRepository.getById(second.id)?.images).toEqual(customImages);
+      expect(JSON.parse(localStorage.getItem(storageKey)!).version).toBe(2);
+    } finally {
+      if (originalStorage === null) localStorage.removeItem(storageKey);
+      else localStorage.setItem(storageKey, originalStorage);
+      productRepository.reload();
+    }
+  });
+
   describe('getProducts', () => {
     it('returns an array of products', () => {
       const products = getProducts();

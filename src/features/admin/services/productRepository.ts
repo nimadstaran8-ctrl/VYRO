@@ -1,6 +1,25 @@
 import type { Product } from '../../../types/product';
+import { products as catalogProducts } from '../../../data/mock/products';
 
 const STORAGE_KEY = 'vyro_product_repository';
+const STORAGE_VERSION = 2;
+const catalogById = new Map(catalogProducts.map(product => [product.id, product]));
+
+function addCatalogPhoto(product: Product): Product {
+  const catalog = catalogById.get(product.id);
+  const photo = catalog?.images[0];
+  if (!catalog || !photo?.startsWith('/images/products/photos/')) return product;
+
+  const previousImages = catalog.images.slice(1);
+  const hasDefaultImages =
+    product.images.length === previousImages.length &&
+    previousImages.every((image, index) => image === product.images[index]) &&
+    (!product.primaryImage || product.primaryImage === previousImages[0]);
+
+  return hasDefaultImages
+    ? { ...product, images: [photo, ...product.images], primaryImage: photo }
+    : product;
+}
 
 export interface ProductStorageData {
   products: Product[];
@@ -16,7 +35,7 @@ function getStorageData(): ProductStorageData {
   } catch (e) {
     console.error('Failed to read product storage:', e);
   }
-  return { products: [], version: 1 };
+  return { products: [], version: STORAGE_VERSION };
 }
 
 function setStorageData(data: ProductStorageData): void {
@@ -133,12 +152,20 @@ export class ProductRepository {
   private loadProducts(): Product[] {
     const data = getStorageData();
     this.cachedProducts = data.products;
+    if (data.version < STORAGE_VERSION) {
+      this.cachedProducts = data.products.map(addCatalogPhoto);
+      try {
+        setStorageData({ products: this.cachedProducts, version: STORAGE_VERSION });
+      } catch {
+        // The upgraded catalog remains usable if browser storage is full.
+      }
+    }
     return this.cachedProducts;
   }
 
   private saveProducts(products: Product[]): void {
     this.cachedProducts = products;
-    setStorageData({ products, version: 1 });
+    setStorageData({ products, version: STORAGE_VERSION });
   }
 }
 

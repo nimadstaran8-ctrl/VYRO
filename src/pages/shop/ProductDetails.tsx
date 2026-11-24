@@ -86,6 +86,11 @@ export function ProductDetails() {
         <div className="grid gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <ProductGallery images={product.images} alt={product.name} />
+            {product.images.some(image => image.startsWith('/images/products/photos/')) && (
+              <p className="mt-2 text-sm text-text-secondary">
+                {language === 'fa' ? 'عکس نمونه برای نمایش سبک محصول' : 'Sample photo illustrating the product style'}
+              </p>
+            )}
           </motion.div>
 
           <motion.div
