@@ -1,3 +1,5 @@
+import { getProductName } from '../../services/catalog/productName';
+import { useLanguageStore } from '../../stores/languageStore';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Price } from '../ui/Price';
@@ -13,6 +15,7 @@ interface RecommendationCardProps {
 const FALLBACK_IMAGE = '/images/site/fallback.svg';
 
 export function RecommendationCard({ product, matchScore }: RecommendationCardProps) {
+  const language = useLanguageStore((state) => state.language);
   const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
@@ -27,7 +30,7 @@ export function RecommendationCard({ product, matchScore }: RecommendationCardPr
       <div className="relative aspect-square overflow-hidden rounded-xl bg-background">
         <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}
-          alt={product.name}
+          alt={getProductName(product, language)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
           onError={handleImageError}
@@ -40,7 +43,7 @@ export function RecommendationCard({ product, matchScore }: RecommendationCardPr
       </div>
       <div className="mt-3 flex flex-col gap-1">
         <Rating value={product.rating} count={product.reviewCount} size={12} />
-        <h3 className="text-sm font-medium text-primary">{product.name}</h3>
+        <h3 className="text-sm font-medium text-primary">{getProductName(product, language)}</h3>
         <p className="text-xs text-text-secondary">{truncate(product.description, 40)}</p>
         <Price price={product.priceUSD} oldPrice={product.oldPriceUSD} size="sm" className="mt-1" />
       </div>

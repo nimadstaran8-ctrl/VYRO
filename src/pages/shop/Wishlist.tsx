@@ -1,3 +1,4 @@
+import { getProductName } from '../../services/catalog/productName';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
@@ -81,7 +82,7 @@ function WishlistProductCard({ product, onRemove, onAddToCart }: WishlistProduct
       <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden rounded-xl bg-background">
         <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}
-          alt={product.name}
+          alt={getProductName(product, language)}
           className="h-full w-full object-cover"
           loading="lazy"
           onError={() => setImageError(true)}
@@ -90,7 +91,7 @@ function WishlistProductCard({ product, onRemove, onAddToCart }: WishlistProduct
       <div className="mt-3 flex flex-col gap-1">
         <Rating value={product.rating} count={product.reviewCount} size={12} />
         <Link to={`/product/${product.slug}`}>
-          <h3 className="text-sm font-medium text-primary hover:underline">{product.name}</h3>
+          <h3 className="text-sm font-medium text-primary hover:underline">{getProductName(product, language)}</h3>
         </Link>
         <p className="text-xs text-text-secondary">{truncate(product.description, 40)}</p>
         <Price price={product.priceUSD} oldPrice={product.oldPriceUSD} size="sm" />

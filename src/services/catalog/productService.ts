@@ -3,6 +3,7 @@ import { products as mockProducts } from '../../data/mock/products';
 import { productRepository } from '../../features/admin/services/productRepository';
 import { imageStorage } from '../../features/admin/services/imageStorage';
 import { logActivity } from '../logs/logService';
+import { getPersianProductName } from './productName';
 
 const FALLBACK_IMAGE = '/images/site/fallback.svg';
 const DEFAULT_PRODUCT_STATUS: ProductStatus = 'active';
@@ -245,10 +246,15 @@ export function getComplementaryProduct(product: Product): Product | undefined {
   return found ? resolveProductImages(found) : undefined;
 }
 
+function normalizePersianSearch(value: string): string {
+  return value.replaceAll('ي', 'ی').replaceAll('ك', 'ک').replace(/[\s\u200c]+/g, ' ').trim();
+}
+
 export function searchProducts(query: string): Product[] {
   initializeProductData();
   const lowerQuery = query.trim().toLowerCase();
   if (!lowerQuery) return [];
+  const persianQuery = normalizePersianSearch(lowerQuery);
 
   return productData
     .filter(
@@ -256,6 +262,7 @@ export function searchProducts(query: string): Product[] {
         isStorefrontVisible(p) &&
         (
           p.name.toLowerCase().includes(lowerQuery) ||
+          (persianQuery.length > 0 && normalizePersianSearch(getPersianProductName(p)?.toLowerCase() ?? '').includes(persianQuery)) ||
           p.style.toLowerCase().includes(lowerQuery) ||
           p.colors.some((c) => c.toLowerCase().includes(lowerQuery)) ||
           p.tags.some((t) => t.toLowerCase().includes(lowerQuery)) ||

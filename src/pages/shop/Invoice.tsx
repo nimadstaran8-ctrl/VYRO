@@ -1,3 +1,4 @@
+import { getProductName } from '../../services/catalog/productName';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowRight } from 'lucide-react';
@@ -166,7 +167,7 @@ export function Invoice() {
                   {order.items.map((item, index) => (
                     <tr key={index}>
                       <td className="py-3 pe-2">
-                        <p className="font-medium text-primary">{item.name}</p>
+                        <p className="font-medium text-primary">{getProductName(item, language)}</p>
                         <p className="text-xs text-text-secondary">
                           {[item.color, item.size].filter(Boolean).join(' / ')}
                         </p>

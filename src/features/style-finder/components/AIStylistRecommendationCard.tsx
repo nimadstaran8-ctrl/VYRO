@@ -1,3 +1,4 @@
+import { getProductName } from '../../../services/catalog/productName';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Check } from 'lucide-react';
 import { ReusableImage } from '../../../components/ui/ReusableImage';
@@ -39,11 +40,11 @@ export function AIStylistRecommendationCard({
       <Link
         to={`/product/${product.slug}`}
         className="relative aspect-square overflow-hidden bg-black/5 dark:bg-black/20"
-        aria-label={product.name}
+        aria-label={getProductName(product, language)}
       >
         <ReusableImage
           src={product.primaryImage || product.images[0]}
-          alt={product.name}
+          alt={getProductName(product, language)}
           aspectRatio="1 / 1"
           className="h-full w-full"
           imgClassName="transition-transform duration-500 group-hover:scale-105"
@@ -75,7 +76,7 @@ export function AIStylistRecommendationCard({
 
         <Link to={`/product/${product.slug}`}>
           <h3 className="text-sm font-medium text-primary dark:text-white transition-colors hover:text-cyan-300">
-            {product.name}
+            {getProductName(product, language)}
           </h3>
         </Link>
         <p className="mt-1 line-clamp-2 text-xs text-text-secondary dark:text-slate-400">

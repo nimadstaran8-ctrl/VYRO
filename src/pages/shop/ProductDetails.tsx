@@ -1,3 +1,4 @@
+import { getProductName } from '../../services/catalog/productName';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -80,12 +81,12 @@ export function ProductDetails() {
 
   return (
     <div key={product.id}>
-      <SEO title={product.name} description={product.description} image={product.primaryImage || product.images[0]} />
+      <SEO title={getProductName(product, language)} description={product.description} image={product.primaryImage || product.images[0]} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-2">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <ProductGallery images={product.images} alt={product.name} />
+            <ProductGallery images={product.images} alt={getProductName(product, language)} />
             {product.images.some(image => image.startsWith('/images/products/photos/')) && (
               <p className="mt-2 text-sm text-text-secondary">
                 {language === 'fa' ? 'عکس نمونه برای نمایش سبک محصول' : 'Sample photo illustrating the product style'}
@@ -101,7 +102,7 @@ export function ProductDetails() {
           >
             <div className="mb-8">
               <div className="flex items-start justify-between gap-4">
-                <h1 className="text-2xl font-semibold text-primary md:text-3xl">{product.name}</h1>
+                <h1 className="text-2xl font-semibold text-primary md:text-3xl">{getProductName(product, language)}</h1>
                 <WishlistButton productId={product.id} size={22} />
               </div>
               <div className="mt-2">

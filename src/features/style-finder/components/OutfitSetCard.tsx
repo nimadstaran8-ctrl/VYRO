@@ -1,3 +1,4 @@
+import { getProductName } from '../../../services/catalog/productName';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Package, Check } from 'lucide-react';
 import { ReusableImage } from '../../../components/ui/ReusableImage';
@@ -56,11 +57,11 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
         <Link
           to={`/product/${hat.slug}`}
           className="group relative overflow-hidden rounded-xl bg-black/5 dark:bg-black/20"
-          aria-label={hat.name}
+          aria-label={getProductName(hat, language)}
         >
           <ReusableImage
             src={hat.primaryImage || hat.images[0]}
-            alt={hat.name}
+            alt={getProductName(hat, language)}
             aspectRatio="1 / 1"
             className="h-full w-full"
             imgClassName="transition-transform duration-500 group-hover:scale-105"
@@ -69,11 +70,11 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
         <Link
           to={`/product/${glasses.slug}`}
           className="group relative overflow-hidden rounded-xl bg-black/5 dark:bg-black/20"
-          aria-label={glasses.name}
+          aria-label={getProductName(glasses, language)}
         >
           <ReusableImage
             src={glasses.primaryImage || glasses.images[0]}
-            alt={glasses.name}
+            alt={getProductName(glasses, language)}
             aspectRatio="1 / 1"
             className="h-full w-full"
             imgClassName="transition-transform duration-500 group-hover:scale-105"
@@ -83,11 +84,11 @@ export function OutfitSetCard({ hat, glasses, score, reasons }: OutfitSetCardPro
 
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="font-medium text-primary dark:text-white">{hat.name}</p>
+          <p className="font-medium text-primary dark:text-white">{getProductName(hat, language)}</p>
           <Price price={hat.priceUSD} oldPrice={hat.oldPriceUSD} size="sm" />
         </div>
         <div>
-          <p className="font-medium text-primary dark:text-white">{glasses.name}</p>
+          <p className="font-medium text-primary dark:text-white">{getProductName(glasses, language)}</p>
           <Price price={glasses.priceUSD} oldPrice={glasses.oldPriceUSD} size="sm" />
         </div>
       </div>

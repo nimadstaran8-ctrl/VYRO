@@ -1,3 +1,4 @@
+import { getProductName } from '../../../services/catalog/productName';
 import { useState } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -30,7 +31,7 @@ export function CartItem({ item }: CartItemProps) {
       <Link to={`/product/${product.slug}`} className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-background">
         <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}
-          alt={product.name}
+          alt={getProductName(product, language)}
           className="h-full w-full object-cover"
           loading="lazy"
           onError={() => setImageError(true)}
@@ -40,7 +41,7 @@ export function CartItem({ item }: CartItemProps) {
       <div className="flex flex-1 flex-col justify-between">
         <div>
           <Link to={`/product/${product.slug}`}>
-            <h3 className="text-sm font-medium text-primary hover:underline">{product.name}</h3>
+            <h3 className="text-sm font-medium text-primary hover:underline">{getProductName(product, language)}</h3>
           </Link>
           <p className="text-xs text-text-secondary">
             {item.color} / {item.size}

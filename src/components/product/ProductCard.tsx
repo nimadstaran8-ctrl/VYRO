@@ -1,3 +1,4 @@
+import { getProductName } from '../../services/catalog/productName';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -56,11 +57,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
       <Link
         to={`/product/${product.slug}`}
         className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-background"
-        aria-label={product.name}
+        aria-label={getProductName(product, language)}
       >
         <img
           src={imageError ? FALLBACK_IMAGE : product.primaryImage || product.images[0]}
-          alt={product.name}
+          alt={getProductName(product, language)}
           className="absolute inset-0 h-full! w-full object-contain"
           loading="eager"
           onError={handleImageError}
@@ -68,7 +69,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {product.images.length > 1 && !image2Error && (
           <motion.img
             src={product.images[1]}
-            alt={`${product.name} alternate view`}
+            alt={`${getProductName(product, language)}${language === 'fa' ? '، نمای دیگر' : ', alternate view'}`}
             className="absolute inset-0 h-full! w-full object-contain"
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
@@ -97,7 +98,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
       <div className="mt-4">
         <Link to={`/product/${product.slug}`}>
-          <h3 className="text-sm font-medium text-primary hover:underline">{product.name}</h3>
+          <h3 className="text-sm font-medium text-primary hover:underline">{getProductName(product, language)}</h3>
         </Link>
         <Price price={product.priceUSD} oldPrice={product.oldPriceUSD} size="sm" className="mt-1" />
       </div>

@@ -16,6 +16,7 @@ import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPric
 
 interface FormData {
   name: string;
+  nameFa: string;
   slug: string;
   description: string;
   price: string;
@@ -72,6 +73,7 @@ function ProductEditor({ id }: { id?: string }) {
   const language = useLanguageStore((state) => state.language);
   const [formData, setFormData] = useState<FormData | null>(() => product ? ({
     name: product.name,
+    nameFa: product.nameFa ?? '',
     slug: product.slug,
     description: product.description,
     price: product.priceUSD.toString(),
@@ -272,6 +274,7 @@ function ProductEditor({ id }: { id?: string }) {
       const updatedProduct: Product = {
         ...existingProduct,
         name: formData.name.trim(),
+        nameFa: formData.nameFa.trim() || undefined,
         slug: formData.slug.trim(),
         description: formData.description.trim(),
         priceUSD: parseFloat(formData.price),
@@ -386,6 +389,13 @@ function ProductEditor({ id }: { id?: string }) {
               placeholder={content.enterProductName}
               error={errors.name}
               required
+            />
+
+            <Input
+              label={language === 'fa' ? 'نام فارسی محصول (اختیاری)' : 'Persian product name (optional)'}
+              value={formData.nameFa}
+              onChange={(e) => setFormData(prev => prev ? { ...prev, nameFa: e.target.value } : null)}
+              dir="rtl"
             />
 
             <Input

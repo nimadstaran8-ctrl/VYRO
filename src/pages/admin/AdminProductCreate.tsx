@@ -14,6 +14,7 @@ import { getCurrencyState, subscribeToCurrency, convertUsdToRial, formatRialPric
 
 interface FormData {
   name: string;
+  nameFa: string;
   slug: string;
   description: string;
   price: string;
@@ -43,6 +44,7 @@ interface FormErrors {
 
 const initialFormData: FormData = {
   name: '',
+  nameFa: '',
   slug: '',
   description: '',
   price: '',
@@ -230,6 +232,7 @@ export function AdminProductCreate() {
       const product: Product = {
         id: generateId(),
         name: formData.name.trim(),
+        nameFa: formData.nameFa.trim() || undefined,
         slug: formData.slug.trim(),
         description: formData.description.trim(),
         priceUSD: parseFloat(formData.price),
@@ -298,6 +301,13 @@ export function AdminProductCreate() {
               placeholder={content.enterProductName}
               error={errors.name}
               required
+            />
+
+            <Input
+              label={language === 'fa' ? 'نام فارسی محصول (اختیاری)' : 'Persian product name (optional)'}
+              value={formData.nameFa}
+              onChange={(e) => setFormData(prev => ({ ...prev, nameFa: e.target.value }))}
+              dir="rtl"
             />
 
             <Input

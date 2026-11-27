@@ -13,6 +13,7 @@ export type ProductStatus = 'active' | 'draft' | 'out-of-stock';
 export interface Product {
   id: string;
   name: string;
+  nameFa?: string;
   slug: string;
   category: Category;
   priceUSD: number;

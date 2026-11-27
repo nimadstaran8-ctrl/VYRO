@@ -1,3 +1,4 @@
+import { getPersianProductName } from '../catalog/productName';
 import type { Order, OrderStatus, OrderCustomer, OrderItem, OrderPayment } from '../../types/order';
 import { FREE_SHIPPING_THRESHOLD, DEFAULT_SHIPPING_COST } from '../../constants/product';
 import { getProductById, decrementStock, restoreStock } from '../catalog/productService';
@@ -268,6 +269,7 @@ export function createOrder(data: CreateOrderData): { success: boolean; order?: 
     items.push({
       productId: product.id,
       name: product.name,
+      nameFa: getPersianProductName(product),
       price: product.priceUSD,
       quantity: item.quantity,
       color: item.color,

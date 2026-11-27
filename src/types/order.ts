@@ -34,6 +34,7 @@ export interface OrderCustomer {
 export interface OrderItem {
   productId: string;
   name: string;
+  nameFa?: string;
   price: number;
   quantity: number;
   color: string;

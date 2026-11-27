@@ -1,3 +1,4 @@
+import { getProductName } from '../../services/catalog/productName';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -153,13 +154,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                           >
                             <img
                               src={imageErrors[product.id] ? FALLBACK_IMAGE : (product.primaryImage || product.images[0])}
-                              alt={product.name}
+                              alt={getProductName(product, language)}
                               className="h-14 w-14 rounded-lg object-cover"
                               loading="lazy"
                               onError={() => handleImageError(product.id)}
                             />
                             <div>
-                              <p className="text-sm font-medium text-primary">{product.name}</p>
+                              <p className="text-sm font-medium text-primary">{getProductName(product, language)}</p>
                               <p className="text-xs text-text-secondary">
                                 {truncate(product.description, 30)}
                               </p>
