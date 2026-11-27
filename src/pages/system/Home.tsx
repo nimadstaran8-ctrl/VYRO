@@ -16,8 +16,8 @@ export function Home() {
     : { title: 'Find Your Vibe.', subtitle: 'Hats and glasses made for your style.' };
 
   const styleAssistantText = language === 'fa'
-    ? { label: 'مشاور استایل', title: ' مطمئن نیستید چه چیزی به شما می‌آید؟', description: 'استایلی متناسب با شما پیدا کنید. به چند سوال ساده پاسخ دهید و یک پیشنهاد شخصی دریافت کنید.' }
-    : { label: 'Style assistant', title: 'Not Sure What Fits You?', description: 'Find a style that matches you. Answer a few simple questions and get a personal recommendation.' };
+    ? { label: 'مشاور استایل', title: 'چه عینکی به فرم صورتم میاد؟', description: 'فرم صورتت رو انتخاب کن و فریم‌های موجودی که بهت میاد رو ببین.', action: 'پیدا کردن فریم' }
+    : { label: 'Style assistant', title: 'Which glasses suit my face shape?', description: 'Choose your face shape to discover frames available from VYRO.', action: 'Find my frames' };
 
   return (
     <>
@@ -92,7 +92,7 @@ export function Home() {
             {styleAssistantText.description}
           </p>
           <Button variant="accent" size="lg" className="mt-8" asChild>
-            <Link to="/style-finder">{t('nav.styleFinder', language)}</Link>
+            <Link to="/style-finder">{styleAssistantText.action}</Link>
           </Button>
         </div>
       </section>

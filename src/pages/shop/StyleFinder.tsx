@@ -1,6 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import { SEO } from '../../components/ui/SEO';
 import { StyleFinder as StyleFinderWidget } from '../../features/style-finder/components/StyleFinder';
+import { FaceShapeFinder } from '../../features/style-finder/components/FaceShapeFinder';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
 
@@ -26,6 +27,7 @@ export function StyleFinder() {
             {t('aiStylist.subtitle', language)}
           </p>
         </div>
+        <FaceShapeFinder language={language} />
         <StyleFinderWidget />
       </div>
     </>
