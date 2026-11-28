@@ -1,17 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Phone, Save, RotateCcw, Send } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useLanguageStore } from '../../stores/languageStore';
 import { type Language } from '../../lib/i18n';
-import {
-  getSocialSettings,
-  normalizeFooterPhone,
-  updateSocialSettings,
-  resetSocialSettings,
-  type SocialSettings,
-} from '../../services/settings';
+import { getSocialSettings, normalizeFooterPhone, type SocialSettings } from '../../services/settings';
+import { defaultFooter, readStorefrontFooter, saveStorefrontFooter } from '../../services/settings/storefrontFooter';
 
 type SocialPlatform = keyof SocialSettings;
 
@@ -22,10 +17,10 @@ interface PlatformConfig {
 }
 
 function isValidHttpsUrl(value: string): boolean {
-  if (!value) return false;
+  if (!/^https:\/\//i.test(value) || value.length > 1024 || /[\s\\]/.test(value)) return false;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:';
+    return url.hostname !== '' && !url.username && !url.password && url.port !== '0';
   } catch {
     return false;
   }
@@ -34,12 +29,26 @@ function isValidHttpsUrl(value: string): boolean {
 export function AdminFooterSocial() {
   const lang = useLanguageStore((state) => state.language);
   const language = lang as Language;
-  const [formData, setFormData] = useState<SocialSettings>(() => getSocialSettings());
+  const [formData, setFormData] = useState<SocialSettings>(defaultFooter);
+  const [published, setPublished] = useState<SocialSettings>();
+  const [password, setPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<'load' | 'save' | 'unauthorized' | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [touched, setTouched] = useState<Partial<Record<SocialPlatform, boolean>>>({});
+  const [attemptedSave, setAttemptedSave] = useState(false);
+  const fa = language === 'fa';
+
+  useEffect(() => {
+    const request = new AbortController();
+    readStorefrontFooter(request.signal).then(footer => {
+      setPublished(footer);
+      setFormData(footer);
+    }).catch(() => {
+      if (!request.signal.aborted) setSaveError('load');
+    });
+    return () => request.abort();
+  }, []);
 
   const platforms: PlatformConfig[] = [
     {
@@ -69,78 +78,58 @@ export function AdminFooterSocial() {
     },
     {
       key: 'phone',
-      label: language === 'fa' ? 'شماره تلفن فوتر' : 'Footer phone number',
+      label: fa ? 'شماره تلفن فوتر' : 'Footer phone number',
       icon: <Phone size={18} aria-hidden="true" />,
     },
   ];
 
-  const errors = useMemo(() => {
-    const next: Partial<Record<SocialPlatform, string>> = {};
-    (['instagram', 'tiktok', 'telegram'] as const).forEach((key) => {
-      const value = formData[key];
-      if (touched[key] && !isValidHttpsUrl(value)) {
-        next[key] = language === 'fa'
-          ? 'لطفاً یک آدرس HTTPS معتبر وارد کنید'
-          : 'Please enter a valid HTTPS URL';
+  const errors: Partial<Record<SocialPlatform, string>> = {};
+  const phone = formData.phone.trim() ? normalizeFooterPhone(formData.phone) : '';
+  if (attemptedSave) {
+    if (phone === null) errors.phone = fa ? 'شمارهٔ معتبر وارد کنید.' : 'Enter a valid phone number.';
+    for (const platform of ['instagram', 'tiktok', 'telegram'] as const) {
+      const url = formData[platform].trim();
+      if (url && !isValidHttpsUrl(url)) {
+        errors[platform] = fa ? 'لطفاً یک آدرس HTTPS معتبر وارد کنید.' : 'Enter a valid HTTPS URL.';
       }
-    });
-    if (touched.phone && formData.phone.trim() && !normalizeFooterPhone(formData.phone)) {
-      next.phone = language === 'fa' ? 'لطفاً یک شماره تلفن معتبر وارد کنید' : 'Please enter a valid phone number';
     }
-    return next;
-  }, [formData, touched, language]);
+  }
 
-  const hasErrors = Object.keys(errors).length > 0;
-  const current = getSocialSettings();
-  const hasChanges = platforms.some(({ key }) => formData[key] !== current[key]);
+  const hasChanges = published && platforms.some(({ key }) => formData[key] !== published[key]);
+  const previousSettings = getSocialSettings();
 
-  const handleChange = (key: SocialPlatform) => (value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-    setTouched((prev) => ({ ...prev, [key]: true }));
+  async function handleSave() {
+    setAttemptedSave(true);
     setSaveMessage(null);
     setSaveError(null);
-  };
-
-  const handleBlur = (key: SocialPlatform) => () => {
-    setTouched((prev) => ({ ...prev, [key]: true }));
-  };
-
-  const handleSave = () => {
-    setSaveMessage(null);
-    setSaveError(null);
-
-    if (hasErrors) {
-      return;
-    }
+    if (phone === null || [formData.instagram, formData.tiktok, formData.telegram]
+      .some(url => url.trim() && !isValidHttpsUrl(url.trim()))) return;
 
     setIsSaving(true);
-    const result = updateSocialSettings(formData);
-    setIsSaving(false);
-
-    if (result.success) {
-      setFormData(getSocialSettings());
-      setSaveMessage(language === 'fa' ? 'تنظیمات ذخیره شد' : 'Settings saved successfully');
-      setTimeout(() => setSaveMessage(null), 3000);
-    } else {
-      setSaveError(result.error || (language === 'fa' ? 'خطا در ذخیره تنظیمات' : 'Failed to save settings'));
+    try {
+      const footer = await saveStorefrontFooter({
+        instagram: formData.instagram.trim(),
+        tiktok: formData.tiktok.trim(),
+        telegram: formData.telegram.trim(),
+        phone,
+      }, password);
+      setPublished(footer);
+      setFormData(footer);
+      setPassword('');
+      setSaveMessage(fa ? 'فوتر برای همهٔ بازدیدکنندگان به‌روزرسانی شد.' : 'The footer was updated for all visitors.');
+    } catch (error) {
+      setSaveError(error instanceof Error && error.message === 'unauthorized' ? 'unauthorized' : 'save');
+    } finally {
+      setIsSaving(false);
     }
-  };
+  }
 
-  const handleReset = () => {
+  function handleReset() {
     setShowResetConfirm(false);
+    setFormData(defaultFooter);
     setSaveMessage(null);
     setSaveError(null);
-
-    const result = resetSocialSettings();
-    if (result.success) {
-      setFormData(getSocialSettings());
-      setTouched({});
-      setSaveMessage(language === 'fa' ? 'تنظیمات به حالت پیش‌فرض بازنشانی شد' : 'Settings reset to defaults');
-      setTimeout(() => setSaveMessage(null), 3000);
-    } else {
-      setSaveError(result.error || (language === 'fa' ? 'خطا در بازنشانی تنظیمات' : 'Failed to reset settings'));
-    }
-  };
+  }
 
   const content = {
     title: language === 'fa' ? 'فوتر و شبکه‌های اجتماعی' : 'Footer & Social Media Settings',
@@ -151,13 +140,13 @@ export function AdminFooterSocial() {
     reset: language === 'fa' ? 'بازنشانی به پیش‌فرض' : 'Reset to Defaults',
     resetTitle: language === 'fa' ? 'بازنشانی تنظیمات' : 'Reset Settings',
     resetMessage: language === 'fa'
-      ? 'آیا می‌خواهید پیوندها و شماره تلفن فوتر را به حالت پیش‌فرض برگردانید؟'
-      : 'Reset the footer links and phone number to their defaults?',
+      ? 'مقادیر پیش‌فرض در فرم قرار می‌گیرند. برای انتشار آن‌ها، ذخیره را بزنید.'
+      : 'Load the default values into the form. Select Save to publish them.',
     confirm: language === 'fa' ? 'بازنشانی' : 'Reset',
     cancel: language === 'fa' ? 'لغو' : 'Cancel',
     requiredHttps: language === 'fa'
-      ? 'لینک شبکه‌های اجتماعی باید HTTPS باشد. برای غیرفعال کردن تماس، شماره را خالی بگذارید.'
-      : 'Social links must use HTTPS. Leave the phone number blank to disable calling.',
+      ? 'لینک‌ها باید HTTPS باشند. برای غیرفعال کردن هر دکمه، مقدارش را خالی بگذارید.'
+      : 'Links must use HTTPS. Leave a field blank to disable its button.',
   };
 
   return (
@@ -172,7 +161,7 @@ export function AdminFooterSocial() {
             type="button"
             variant="outline"
             onClick={() => setShowResetConfirm(true)}
-            disabled={isSaving}
+            disabled={isSaving || !published}
           >
             <RotateCcw className="h-4 w-4 ltr:ml-2 rtl:mr-2" />
             {content.reset}
@@ -181,7 +170,7 @@ export function AdminFooterSocial() {
             type="button"
             onClick={handleSave}
             isLoading={isSaving}
-            disabled={isSaving || !hasChanges}
+            disabled={isSaving || !hasChanges || !password}
           >
             <Save className="h-4 w-4 ltr:ml-2 rtl:mr-2" />
             {content.save}
@@ -197,7 +186,11 @@ export function AdminFooterSocial() {
 
       {saveError && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:bg-red-950/20 dark:border-red-800">
-          <p className="text-sm text-red-600 dark:text-red-400">{saveError}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{{
+            load: fa ? 'تنظیمات سایت دریافت نشد. صفحه را دوباره بارگذاری کنید.' : 'Could not load the live settings. Reload the page.',
+            unauthorized: fa ? 'رمز مالک درست نیست.' : 'The owner password is incorrect.',
+            save: fa ? 'ذخیره انجام نشد. دوباره تلاش کنید.' : 'Could not save. Try again.',
+          }[saveError]}</p>
         </div>
       )}
 
@@ -222,18 +215,30 @@ export function AdminFooterSocial() {
                   <Input
                     label={label}
                     type={key === 'phone' ? 'tel' : 'url'}
-                    dir={key === 'phone' ? 'ltr' : undefined}
+                    dir="ltr"
                     aria-label={label}
                     value={formData[key]}
-                    onChange={(e) => handleChange(key)(e.target.value)}
-                    onBlur={handleBlur(key)}
+                    onChange={event => setFormData(previous => ({ ...previous, [key]: event.target.value }))}
                     error={errors[key]}
-                    placeholder={key === 'phone' ? '+98 912 …' : `https://www.${key}.com/...`}
-                    disabled={isSaving}
+                    placeholder={key === 'phone' ? '+98 912 …' : 'https://…'}
+                    disabled={isSaving || !published}
                   />
                 </div>
               </div>
             ))}
+            {published && platforms.some(({ key }) => previousSettings[key] !== defaultFooter[key]) && (
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => setFormData(previousSettings)}>
+                {fa ? 'آوردن تنظیمات قدیمی این مرورگر به فرم' : 'Load this browser’s previous settings'}
+              </Button>
+            )}
+            <Input
+              type="password"
+              autoComplete="current-password"
+              label={fa ? 'رمز مالک برای انتشار تنظیمات' : 'Owner password'}
+              value={password}
+              disabled={isSaving || !published}
+              onChange={event => setPassword(event.target.value)}
+            />
           </div>
         </div>
       </div>

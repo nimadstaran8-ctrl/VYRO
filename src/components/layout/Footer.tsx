@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Phone, Send } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { t } from '../../lib/i18n';
-import { getSocialSettings, normalizeFooterPhone } from '../../services/settings';
+import { normalizeFooterPhone } from '../../services/settings';
+import { readStorefrontFooter } from '../../services/settings/storefrontFooter';
 
 const footerLinks = (lang: string) => [
   { label: t('nav.shop', lang as 'fa' | 'en'), href: '/shop' },
@@ -65,7 +67,13 @@ function SocialLink({ url, label, children, phone = false }: SocialLinkProps) {
 export function Footer() {
   const language = useLanguageStore((state) => state.language);
   const links = footerLinks(language);
-  const social = getSocialSettings();
+  const [social, setSocial] = useState({ instagram: '', tiktok: '', telegram: '', phone: '' });
+
+  useEffect(() => {
+    const request = new AbortController();
+    readStorefrontFooter(request.signal).then(setSocial).catch(() => {});
+    return () => request.abort();
+  }, []);
 
   return (
     <footer className="bg-primary text-white dark:bg-surface">

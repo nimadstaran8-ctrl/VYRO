@@ -1,0 +1,12 @@
+location = /api/storefront-footer {
+    if ($scheme != https) { return 308 https://vyro-shop.ir$request_uri; }
+
+    limit_except GET {
+        auth_basic "VYRO owner";
+        auth_basic_user_file /etc/nginx/vyro-storefront-phone.htpasswd;
+    }
+
+    client_max_body_size 8k;
+    proxy_pass http://unix:/run/vyro-storefront-phone/http.sock;
+    proxy_set_header Authorization "";
+}

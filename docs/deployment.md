@@ -51,3 +51,11 @@ Create the `production` GitHub environment and configure it to allow deployments
 | `VYRO_DEPLOY_ENABLED` | Repository variable | `true` after the VPS and environment are ready |
 
 Once the workflow is merged into `main` and the settings above are in place, use the PowerShell command for the first deployment.
+
+## Public footer settings
+
+The owner updates the public phone number and Instagram, TikTok, and Telegram links in Admin → Footer & Social Media Settings. The form requires the separate owner password. A blank field disables its link. The VPS stores the settings in `/var/lib/vyro-storefront-phone/footer.json` across releases.
+
+On a new Ubuntu VPS, install `deploy/storefront-phone.py` as `/usr/local/lib/vyro/storefront-phone.py`, install `deploy/vyro-storefront-phone.service` in `/etc/systemd/system/`, and enable it with `sudo systemctl enable --now vyro-storefront-phone`. Install `deploy/storefront-phone.nginx` as `/etc/nginx/snippets/vyro-storefront-phone.conf` and include it inside the storefront's Nginx server block. Use LF line endings when copying the files.
+
+To transfer ownership, create a new strong password in a password manager and replace the `owner` password on the VPS. With `htpasswd` (from `apache2-utils`) installed, run `sudo htpasswd -B /etc/nginx/vyro-storefront-phone.htpasswd owner`. Use `-c` only when the file does not exist. Ensure the file is owned by `root:www-data` with mode `0640`. Validate and reload Nginx using `sudo nginx -t` and `sudo systemctl reload nginx`. Give the new owner the password through a private channel.
