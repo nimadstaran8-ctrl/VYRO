@@ -71,9 +71,23 @@ if (-not $dispatch.workflow_run_id) {
 
 $runUri = "$api/runs/$($dispatch.workflow_run_id)"
 Write-Host "Waiting for deployment at $($dispatch.html_url)"
-$deadline = [DateTime]::UtcNow.AddMinutes(30)
+$startedWaiting = [DateTime]::UtcNow
+$visibilityDeadline = $startedWaiting.AddMinutes(2)
+$deadline = $startedWaiting.AddMinutes(30)
+$run = $null
 do {
-    $run = Invoke-RestMethod -Uri $runUri -Headers $headers -TimeoutSec 30
+    try {
+        $run = Invoke-RestMethod -Uri $runUri -Headers $headers -TimeoutSec 30
+    } catch {
+        if ([int]$_.Exception.Response.StatusCode -ne 404) {
+            throw
+        }
+        if ($null -ne $run -or [DateTime]::UtcNow -ge $visibilityDeadline) {
+            throw "GitHub could not find workflow run $($dispatch.workflow_run_id). Check the run and your GitHub credential's Actions access at $($dispatch.html_url)."
+        }
+        Start-Sleep -Seconds 5
+        continue
+    }
     if ($run.head_sha -ne $commit) {
         throw "GitHub dispatched a different commit. Expected $commit. See $($dispatch.html_url)."
     }
