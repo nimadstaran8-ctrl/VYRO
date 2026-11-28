@@ -1,0 +1,101 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Full Git SHA to deploy from main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint, test, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Confirm the requested production release
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          REQUESTED_COMMIT: ${{ inputs.commit }}
+          DEPLOY_ENABLED: ${{ vars.VYRO_DEPLOY_ENABLED }}
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main || "$REQUESTED_COMMIT" != "$GITHUB_SHA" ]]; then
+            echo '::error::The requested commit must match the dispatched main commit.'
+            exit 1
+          fi
+          if [[ "$DEPLOY_ENABLED" != true ]]; then
+            echo '::error::Production deployment is disabled.'
+            exit 1
+          fi
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Package the tested build
+        if: github.event_name == 'workflow_dispatch'
+        run: tar -czf site.tar.gz -C dist .
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: vyro-build
+          path: site.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy to the VPS
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    concurrency:
+      group: vyro-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vyro-build
+      - name: Send the release over SSH
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VPS_HOST: ${{ vars.VYRO_VPS_HOST }}
+          VPS_USER: ${{ vars.VYRO_VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VYRO_VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VYRO_VPS_KNOWN_HOSTS }}
+        run: |
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$main_sha" != "$GITHUB_SHA" ]]; then
+            echo '::error::Main moved while this release was building. Deploy the new main commit.'
+            exit 1
+          fi
+
+          : "${VPS_HOST:?Missing VYRO_VPS_HOST}"
+          : "${VPS_USER:?Missing VYRO_VPS_USER}"
+          : "${VPS_SSH_KEY:?Missing VYRO_VPS_SSH_KEY}"
+          : "${VPS_KNOWN_HOSTS:?Missing VYRO_VPS_KNOWN_HOSTS}"
+          umask 077
+          ssh_dir="$(mktemp -d)"
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          printf '%s\n' "$VPS_SSH_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          ssh -T -i "$ssh_dir/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$ssh_dir/known_hosts" \
+            -o ConnectTimeout=15 -- "$VPS_USER@$VPS_HOST" "deploy $GITHUB_SHA" < site.tar.gz
