@@ -1,6 +1,16 @@
 # VYRO CI/CD
 
-GitHub Actions runs lint, tests, and a production build on pull requests to `main` and pushes to `main`. With deployment enabled, the production job publishes that same build to the VPS. It checks the storefront and its entry script against the local Nginx HTTPS endpoint. A failed check restores the previous release.
+GitHub Actions runs lint, tests, and a production build on pull requests to `main` and pushes to `main`. A deployment request runs those same checks and publishes its tested build to the VPS. It checks the storefront and its entry script against the local Nginx HTTPS endpoint. A failed check restores the previous release.
+
+## Deploy from Windows
+
+From the repository root, run this in PowerShell after committing your changes on local `main`:
+
+```powershell
+.\deploy\publish.ps1
+```
+
+The script uses your Git Credential Manager sign-in or the `GH_TOKEN` environment variable for GitHub Actions. Your Git account must be allowed to push to `main`, and the API credential must be able to run Actions. The script requires a clean working tree and pushes the exact local commit without force. It can also redeploy the same commit. It waits for the exact workflow run and reports success after the VPS verifies the deployed build.
 
 ## Prepare the VPS
 
@@ -40,4 +50,4 @@ Create the `production` GitHub environment and configure it to allow deployments
 | `VYRO_VPS_KNOWN_HOSTS` | Environment secret | Verified SSH host key in OpenSSH known_hosts format for `185.26.32.238` |
 | `VYRO_DEPLOY_ENABLED` | Repository variable | `true` after the VPS and environment are ready |
 
-Run **CI/CD** on `main` from the Actions tab for the first deployment. Check the deployment log and reload the public storefront.
+Once the workflow is merged into `main` and the settings above are in place, use the PowerShell command for the first deployment.
