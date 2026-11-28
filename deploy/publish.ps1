@@ -47,6 +47,18 @@ $headers = @{
 }
 $api = 'https://api.github.com/repos/nimadstaran8-ctrl/VYRO/actions'
 
+try {
+    $deployGate = Invoke-RestMethod -Uri "$api/variables/VYRO_DEPLOY_ENABLED" -Headers $headers -TimeoutSec 30
+} catch {
+    if ([int]$_.Exception.Response.StatusCode -eq 404) {
+        throw 'VYRO_DEPLOY_ENABLED is missing or inaccessible. Set up VPS publishing and ensure the GitHub credential can read repository variables.'
+    }
+    throw
+}
+if ($deployGate.value -ne 'true') {
+    throw 'VYRO_DEPLOY_ENABLED is not true. Complete the VPS setup before publishing.'
+}
+
 Write-Host "Pushing main at $commit..."
 Invoke-Git push origin "${commit}:refs/heads/main"
 

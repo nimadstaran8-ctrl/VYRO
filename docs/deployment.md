@@ -10,7 +10,7 @@ From the repository root, run this in PowerShell after committing your changes o
 .\deploy\publish.ps1
 ```
 
-The script uses your Git Credential Manager sign-in or the `GH_TOKEN` environment variable for GitHub Actions. Your Git account must be allowed to push to `main`, and the API credential must be able to run Actions. The script requires a clean working tree and pushes the exact local commit without force. It can also redeploy the same commit. It waits for the exact workflow run and reports success after the VPS verifies the deployed build.
+The script uses your Git Credential Manager sign-in or the `GH_TOKEN` environment variable for GitHub Actions. Your Git account must be allowed to push to `main`, and the API credential must be able to read repository variables and run Actions. The script checks that deployment is enabled and that the working tree is clean before pushing the exact local commit without force. It can also redeploy the same commit. It waits for the exact workflow run and reports success after the VPS verifies the deployed build.
 
 ## Prepare the VPS
 
