@@ -70,9 +70,26 @@ export function Footer() {
   const [social, setSocial] = useState({ instagram: '', tiktok: '', telegram: '', phone: '' });
 
   useEffect(() => {
-    const request = new AbortController();
-    readStorefrontFooter(request.signal).then(setSocial).catch(() => {});
-    return () => request.abort();
+    let request: AbortController | undefined;
+
+    function refreshFooter() {
+      if (document.visibilityState === 'hidden') return;
+      request?.abort();
+      const current = new AbortController();
+      request = current;
+      readStorefrontFooter(current.signal).then(settings => {
+        if (!current.signal.aborted) setSocial(settings);
+      }).catch(() => {});
+    }
+
+    refreshFooter();
+    document.addEventListener('visibilitychange', refreshFooter);
+    window.addEventListener('pageshow', refreshFooter);
+    return () => {
+      request?.abort();
+      document.removeEventListener('visibilitychange', refreshFooter);
+      window.removeEventListener('pageshow', refreshFooter);
+    };
   }, []);
 
   return (

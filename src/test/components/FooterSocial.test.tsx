@@ -66,6 +66,26 @@ describe('Footer Social Links', () => {
     expect(html).not.toContain('href="ftp://invalid-protocol"');
   });
 
+  it('refreshes a published Telegram link when the visitor returns to the page', async () => {
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    let telegram = 'https://t.me/previous';
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ telegram })));
+    try {
+      await act(async () => root.render(<MemoryRouter><Footer /></MemoryRouter>));
+      const link = container.querySelector('[aria-label="Telegram"]');
+      expect(link?.getAttribute('href')).toBe(telegram);
+
+      telegram = 'https://t.me/updated';
+      await act(async () => window.dispatchEvent(new Event('pageshow')));
+      expect(link?.getAttribute('href')).toBe(telegram);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('renders the Persian creator credit and leaves an invalid phone icon inactive', () => {
     const previousLanguage = useLanguageStore.getState().language;
     try {
